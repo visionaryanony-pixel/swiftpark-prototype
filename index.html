@@ -1,0 +1,3305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0F1D32" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>SwiftPark - Smart City Parking</title>
+
+  <!-- Google Fonts: Plus Jakarta Sans (600, 700, 800) & Inter (400, 500, 600, 700) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Pinned UMD React 18.2.0, ReactDOM 18.2.0, Babel Standalone 7.24.0, Tailwind CDN 3.4.1 -->
+  <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com/3.4.1"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            display: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+          },
+          colors: {
+            brandNavy: '#0F1D32',
+            brandBlue: '#2563EB',
+            brandEmerald: '#059669',
+            brandAmber: '#D97706',
+            brandRose: '#E11D48',
+            wardenAmber: '#F59E0B',
+            surfaceBg: '#F8FAFC',
+            surfaceCard: '#FFFFFF',
+            inkPrimary: '#0F172A',
+            inkMuted: '#64748B',
+            borderSubtle: '#E2E8F0',
+            wardenBg: '#090E17',
+            wardenSurface: '#151D2C',
+          },
+          boxShadow: {
+            subtle: '0 2px 12px -2px rgba(15, 23, 42, 0.06), 0 1px 3px 0 rgba(15, 23, 42, 0.04)',
+            raised: '0 10px 28px -4px rgba(15, 23, 42, 0.1), 0 4px 10px -2px rgba(15, 23, 42, 0.05)',
+            floating: '0 20px 44px -8px rgba(15, 23, 42, 0.18), 0 8px 16px -4px rgba(15, 23, 42, 0.08)',
+            elevation: '0 12px 32px -4px rgba(15, 23, 42, 0.12)',
+            stickyBar: '0 -8px 24px -4px rgba(15, 23, 42, 0.08)',
+            device: '0 25px 60px -15px rgba(15, 23, 42, 0.4), 0 0 0 10px #1E293B',
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    html, body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overscroll-behavior: contain;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      background-color: #0B1320;
+    }
+
+    input, textarea, select {
+      user-select: text !important;
+      -webkit-user-select: text !important;
+    }
+
+    @keyframes sheetEntrance {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    @keyframes toastEntrance {
+      from { transform: translateY(-120%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes screenEnter {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulseRing {
+      0% { transform: scale(0.97); opacity: 0.92; }
+      50% { transform: scale(1.04); opacity: 0.55; }
+      100% { transform: scale(0.97); opacity: 0.92; }
+    }
+    @keyframes haloExpand {
+      0% { transform: scale(0.85); opacity: 0.65; }
+      70% { transform: scale(1.38); opacity: 0; }
+      100% { transform: scale(1.38); opacity: 0; }
+    }
+    @keyframes dashMove {
+      to { stroke-dashoffset: -28; }
+    }
+    @keyframes radarSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes checkmarkDraw {
+      0% { stroke-dashoffset: 48; }
+      100% { stroke-dashoffset: 0; }
+    }
+    @keyframes carFollow {
+      0% { transform: translate(0px, 0px); opacity: 1; }
+      50% { transform: translate(96px, -24px); opacity: 1; }
+      100% { transform: translate(192px, -14px); opacity: 1; }
+    }
+
+    .animate-sheet { animation: sheetEntrance 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .animate-toast { animation: toastEntrance 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .animate-screen { animation: screenEnter 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .stagger-1 { animation: screenEnter 0.2s cubic-bezier(0.16, 1, 0.3, 1) 0.04s both; }
+    .stagger-2 { animation: screenEnter 0.2s cubic-bezier(0.16, 1, 0.3, 1) 0.08s both; }
+    .stagger-3 { animation: screenEnter 0.2s cubic-bezier(0.16, 1, 0.3, 1) 0.12s both; }
+    .animate-pulse-ring { animation: pulseRing 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    .animate-halo { opacity: 0; animation: haloExpand 2.2s cubic-bezier(0.16, 1, 0.3, 1) 2 forwards; }
+    .animate-route { animation: dashMove 1.4s linear infinite; }
+    .animate-radar { animation: radarSpin 1.8s linear infinite; transform-origin: center; }
+    .animate-check-draw {
+      stroke-dasharray: 48;
+      stroke-dashoffset: 48;
+      animation: checkmarkDraw 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
+    }
+    .animate-car-path {
+      animation: carFollow 2.6s ease-in-out infinite alternate;
+    }
+
+    .tap-scale {
+      transition: transform 0.1s ease, opacity 0.1s ease;
+    }
+    .tap-scale:active {
+      transform: scale(0.97);
+    }
+
+    .amber-hatched {
+      background-image: repeating-linear-gradient(
+        -45deg,
+        rgba(217, 119, 6, 0.18),
+        rgba(217, 119, 6, 0.18) 6px,
+        rgba(120, 53, 15, 0.35) 6px,
+        rgba(120, 53, 15, 0.35) 12px
+      );
+    }
+
+    .emerald-striped {
+      background-image: repeating-linear-gradient(
+        -45deg,
+        #059669,
+        #059669 5px,
+        #10B981 5px,
+        #10B981 10px
+      );
+    }
+
+    .asphalt-surface {
+      background-color: #0F172A;
+      background-image:
+        radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 0),
+        linear-gradient(180deg, #0F172A 0%, #090E1A 100%);
+      background-size: 12px 12px, 100% 100%;
+    }
+
+    .bay-glow-blue {
+      box-shadow: 0 0 16px -1px rgba(37, 99, 235, 0.55), inset 0 0 8px rgba(59, 130, 246, 0.25);
+    }
+
+    .bay-glow-emerald {
+      box-shadow: 0 0 16px -1px rgba(16, 185, 129, 0.5), inset 0 0 8px rgba(16, 185, 129, 0.2);
+    }
+
+    .custom-scroll::-webkit-scrollbar { width: 4px; height: 4px; }
+    .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 9999px; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body class="text-inkPrimary min-h-[100dvh] flex items-center justify-center p-0 min-[481px]:p-4 overflow-x-hidden">
+
+  <div id="root" class="w-full h-full flex items-center justify-center"></div>
+
+  <script type="text/babel">
+    const { useReducer, useEffect, useLayoutEffect, useState, useRef } = React;
+
+    // --- DATA MODEL: MG ROAD ZONE (20 BAYS) ---
+    // 10 Occupied, 8 Ghost Holds (Unclaimed reservations), 2 Available (B-08 demo & B-14 reassignment)
+    const INITIAL_BAYS = [
+      { id: 'B-01', status: 'occupied' },
+      { id: 'B-02', status: 'occupied' },
+      { id: 'B-03', status: 'occupied' },
+      { id: 'B-04', status: 'occupied' },
+      { id: 'B-05', status: 'occupied' },
+      { id: 'B-06', status: 'occupied' },
+      { id: 'B-07', status: 'occupied' },
+      { id: 'B-08', status: 'available' },
+      { id: 'B-09', status: 'occupied' },
+      { id: 'B-10', status: 'occupied' },
+      { id: 'B-11', status: 'occupied' },
+      { id: 'B-12', status: 'ghost' },
+      { id: 'B-13', status: 'ghost' },
+      { id: 'B-14', status: 'available' },
+      { id: 'B-15', status: 'ghost' },
+      { id: 'B-16', status: 'ghost' },
+      { id: 'B-17', status: 'ghost' },
+      { id: 'B-18', status: 'ghost' },
+      { id: 'B-19', status: 'ghost' },
+      { id: 'B-20', status: 'ghost' },
+    ];
+
+    const INITIAL_STATE = {
+      driverTab: 'explore', // 'explore' | 'booking' | 'wallet'
+      driverScreen: 'S0',   // 'S0' | 'S1' | 'S2' | 'S3' | 'S4' | 'S6'
+      wardenTab: 'tasks',   // 'tasks' | 'zone'
+      activeRole: 'driver', // 'driver' | 'warden' for screen width < 1280px
+
+      autoReleaseActive: false,
+      nearZone: false,
+      zoneFullBranch: false,
+      squatterPresent: true,
+
+      bays: INITIAL_BAYS,
+      walletBalance: 250,
+      walletLedger: [
+        { id: 'tx-0', title: 'Opening Balance', amount: 250, type: 'credit', time: 'Today, 8:45 AM' }
+      ],
+
+      booking: {
+        status: 'none', // 'none' | 'active' | 'checked_in' | 'released' | 'completed' | 'transferred' | 'refunded'
+        bay: 'B-08',
+        zoneName: 'MG Road Zone',
+        slot: '9:00 AM – 11:00 AM',
+        arrivalDeadline: '9:15 AM',
+        amountPaid: 120,
+        secondsRemaining: 900,
+        extensionApplied: false,
+        conflictSubmitted: false,
+        conflictResult: null, // 'reassigned' | 'zone_full'
+        reassignedBay: null,
+        enteredPlate: '4021',
+        firstNoShowEligible: true,
+        lastReleaseWaived: false,
+      },
+
+      wardenTasks: [],
+      resolvedTasksCount: 0,
+      totalResponseTimeSec: 0,
+
+      toasts: {
+        driver: null,
+        warden: null,
+      },
+      activeModal: null, // null | 'cancel_pass' | 'conflict_sheet' | 'switch_zone' | 'refund_flow'
+      lookupStep: 0,
+      reviewerDrawerOpen: false,
+      navigatingActive: false,
+    };
+
+    // --- HELPER: PUT TOAST IN TARGET SLOT ---
+    function withToast(state, target, message, type = 'info') {
+      return {
+        ...state.toasts,
+        [target]: { message, type, id: Date.now() + Math.random() }
+      };
+    }
+
+    // --- PURE ROOT REDUCER ---
+    function rootReducer(state, action) {
+      switch (action.type) {
+        // H1 & G2: Preserve driverScreen when switching to Wallet; restore exact screen when returning to Booking
+        case 'NAVIGATE_DRIVER_TAB': {
+          let nextScreen = state.driverScreen;
+          if (action.tab === 'explore') {
+            nextScreen = 'S0';
+          } else if (action.tab === 'booking') {
+            if (state.driverTab === 'wallet' && ['S1', 'S2', 'S3', 'S4', 'S6'].includes(state.driverScreen)) {
+              nextScreen = state.driverScreen;
+            } else if (state.booking.status === 'active') {
+              nextScreen = state.driverScreen === 'S1' ? 'S1' : 'S2';
+            } else if (state.booking.status === 'checked_in') {
+              nextScreen = state.booking.conflictSubmitted ? 'S6' : 'S4';
+            } else if (['released', 'completed', 'transferred', 'refunded'].includes(state.booking.status)) {
+              nextScreen = 'S3';
+            } else {
+              nextScreen = 'S0';
+            }
+          }
+          // When action.tab === 'wallet', nextScreen remains state.driverScreen untouched
+          return { ...state, driverTab: action.tab, driverScreen: nextScreen };
+        }
+
+        case 'SET_DRIVER_SCREEN':
+          return { ...state, driverScreen: action.screen };
+
+        case 'SET_WARDEN_TAB':
+          return { ...state, wardenTab: action.tab };
+
+        case 'SWITCH_ROLE':
+          return { ...state, activeRole: action.role };
+
+        case 'SET_AUTO_RELEASE_LENS':
+          return { ...state, autoReleaseActive: action.value };
+
+        case 'SET_NEAR_ZONE':
+          return { ...state, nearZone: action.value };
+
+        case 'SET_ZONE_FULL_BRANCH': {
+          let updatedBays = state.bays;
+          if (action.value) {
+            updatedBays = state.bays.map(b => (b.id === 'B-14' && b.status === 'available') ? { ...b, status: 'occupied' } : b);
+          } else {
+            if (state.booking.reassignedBay !== 'B-14') {
+              updatedBays = state.bays.map(b => (b.id === 'B-14' && b.status === 'occupied') ? { ...b, status: 'available' } : b);
+            }
+          }
+          return { ...state, zoneFullBranch: action.value, bays: updatedBays };
+        }
+
+        case 'SET_SQUATTER':
+          return { ...state, squatterPresent: action.value };
+
+        case 'TOGGLE_REVIEWER_DRAWER':
+          return { ...state, reviewerDrawerOpen: !state.reviewerDrawerOpen };
+
+        case 'OPEN_MODAL':
+          return { ...state, activeModal: action.modal, lookupStep: 0 };
+
+        case 'CLOSE_MODAL':
+          return { ...state, activeModal: null, lookupStep: 0 };
+
+        case 'SHOW_TOAST': {
+          const target = action.target || 'driver';
+          return {
+            ...state,
+            toasts: withToast(state, target, action.message, action.toastType || 'info')
+          };
+        }
+
+        case 'DISMISS_TOAST': {
+          const target = action.target || 'driver';
+          return {
+            ...state,
+            toasts: { ...state.toasts, [target]: null }
+          };
+        }
+
+        // H3: CONFIRM_RESERVATION also sets driverTab: 'booking' so Booking tab highlights and mini-bar stays hidden on S1
+        case 'CONFIRM_RESERVATION': {
+          if (state.booking.status !== 'none' && state.booking.status !== 'released') {
+            return {
+              ...state,
+              toasts: withToast(state, 'driver', 'You already have an active reservation.', 'warning')
+            };
+          }
+          if (state.walletBalance < 120) {
+            return {
+              ...state,
+              toasts: withToast(state, 'driver', 'Insufficient wallet balance for reservation.', 'danger')
+            };
+          }
+          const updatedBays = state.bays.map(b => b.id === 'B-08' ? { ...b, status: 'reserved_unclaimed' } : b);
+          const newLedger = [
+            { id: 'tx-' + Date.now(), title: 'Parking Pass: Bay B-08 (9:00 - 11:00 AM)', amount: 120, type: 'debit', time: 'Just now' },
+            ...state.walletLedger
+          ];
+          return {
+            ...state,
+            walletBalance: state.walletBalance - 120,
+            walletLedger: newLedger,
+            bays: updatedBays,
+            navigatingActive: false,
+            booking: {
+              ...state.booking,
+              status: 'active',
+              bay: 'B-08',
+              secondsRemaining: 900,
+              extensionApplied: false,
+              conflictSubmitted: false,
+              conflictResult: null,
+              reassignedBay: null
+            },
+            driverTab: 'booking',
+            driverScreen: 'S1',
+            toasts: withToast(state, 'driver', 'Pass confirmed. 15-minute arrival window active.', 'success')
+          };
+        }
+
+        case 'CLOCK_TICK': {
+          if (state.booking.status !== 'active' || state.booking.secondsRemaining <= 0) {
+            return state;
+          }
+          if (state.booking.secondsRemaining === 1) {
+            return executeNoShowRelease(state, 'timeout');
+          }
+          return {
+            ...state,
+            booking: { ...state.booking, secondsRemaining: state.booking.secondsRemaining - 1 }
+          };
+        }
+
+        case 'ADD_LATE_BUFFER': {
+          if (state.booking.status !== 'active' || state.booking.extensionApplied) {
+            return state;
+          }
+          return {
+            ...state,
+            booking: {
+              ...state.booking,
+              secondsRemaining: state.booking.secondsRemaining + 600,
+              extensionApplied: true
+            },
+            toasts: withToast(state, 'driver', '10-minute buffer added to arrival window.', 'success')
+          };
+        }
+
+        case 'PERFORM_CHECK_IN': {
+          if (state.booking.status !== 'active' || !state.nearZone) {
+            return state;
+          }
+          const updatedBays = state.bays.map(b => b.id === 'B-08' ? { ...b, status: 'reserved_checked_in' } : b);
+          return {
+            ...state,
+            bays: updatedBays,
+            booking: { ...state.booking, status: 'checked_in' },
+            driverTab: 'booking',
+            driverScreen: 'S3',
+            toasts: withToast(state, 'driver', 'Arrival verified via GPS. Bay B-08 secured.', 'success')
+          };
+        }
+
+        case 'TRIGGER_RELEASE': {
+          return executeNoShowRelease(state, action.reason || 'user_cancel');
+        }
+
+        case 'STEP_LOOKUP': {
+          const plateValue = (action.plate && action.plate.trim()) ? action.plate.trim() : (state.booking.enteredPlate || '4021');
+          return {
+            ...state,
+            lookupStep: action.step,
+            booking: { ...state.booking, enteredPlate: plateValue }
+          };
+        }
+
+        case 'RESOLVE_CONFLICT_SEARCH': {
+          if (state.booking.conflictSubmitted) return state;
+
+          const isZoneFull = state.zoneFullBranch;
+          const resultType = isZoneFull ? 'zone_full' : 'reassigned';
+          const plateSaved = action.plate || state.booking.enteredPlate || '4021';
+
+          const updatedBays = state.bays.map(b => {
+            if (b.id === 'B-08') return { ...b, status: 'occupied_by_squatter' };
+            if (!isZoneFull && b.id === 'B-14') return { ...b, status: 'reserved_checked_in' };
+            if (isZoneFull && b.id === 'B-14') return { ...b, status: 'occupied' };
+            return b;
+          });
+
+          const createdTask = {
+            id: 'task-' + Date.now(),
+            bay: 'B-08',
+            plate: plateSaved,
+            timestamp: Date.now(),
+            status: 'pending',
+            resolutionText: null,
+            elapsedSec: 0,
+            outcomeDetail: isZoneFull ? 'Driver reviewing alternatives' : 'Driver reassigned to Bay B-14'
+          };
+
+          return {
+            ...state,
+            bays: updatedBays,
+            activeModal: null,
+            lookupStep: 0,
+            navigatingActive: false,
+            booking: {
+              ...state.booking,
+              conflictSubmitted: true,
+              conflictResult: resultType,
+              reassignedBay: isZoneFull ? null : 'B-14',
+              enteredPlate: plateSaved,
+            },
+            wardenTasks: [createdTask, ...state.wardenTasks],
+            driverTab: 'booking',
+            driverScreen: 'S6',
+            toasts: {
+              driver: { message: 'Alternative secured in under 90 seconds. Warden notified.', type: 'warning', id: Date.now() },
+              warden: { message: 'New task: Bay B-08 unauthorized vehicle', type: 'warning', id: Date.now() + 1 }
+            }
+          };
+        }
+
+        case 'START_NAVIGATING':
+          return { ...state, navigatingActive: true };
+
+        case 'COMPLETE_PARKING': {
+          const targetBay = state.booking.reassignedBay || state.booking.bay;
+          const updatedBays = state.bays.map(b => b.id === targetBay ? { ...b, status: 'occupied' } : b);
+          return {
+            ...state,
+            bays: updatedBays,
+            navigatingActive: false,
+            booking: { ...state.booking, status: 'completed' },
+            driverTab: 'booking',
+            driverScreen: 'S3',
+            toasts: withToast(state, 'driver', 'Parking session active. Have a great day!', 'success')
+          };
+        }
+
+        case 'TRANSFER_BRIGADE_ZONE': {
+          const updatedTasks = state.wardenTasks.map(t => {
+            if (t.bay === 'B-08') return { ...t, outcomeDetail: 'Driver transferred to Brigade Rd Zone' };
+            return t;
+          });
+          return {
+            ...state,
+            activeModal: null,
+            navigatingActive: false,
+            booking: { ...state.booking, status: 'transferred' },
+            wardenTasks: updatedTasks,
+            driverTab: 'booking',
+            driverScreen: 'S3',
+            toasts: withToast(state, 'driver', 'Transferred to Brigade Rd (Bay A-04).', 'success')
+          };
+        }
+
+        case 'PROCESS_FULL_REFUND': {
+          const refundAmount = 170;
+          const newLedger = [
+            { id: 'tx-' + Date.now(), title: 'Refund (₹120) + Inconvenience Credit (₹50)', amount: refundAmount, type: 'credit', time: 'Just now' },
+            ...state.walletLedger
+          ];
+          const updatedTasks = state.wardenTasks.map(t => {
+            if (t.bay === 'B-08') return { ...t, outcomeDetail: 'Driver refunded' };
+            return t;
+          });
+          return {
+            ...state,
+            walletBalance: state.walletBalance + refundAmount,
+            walletLedger: newLedger,
+            activeModal: null,
+            navigatingActive: false,
+            booking: { ...state.booking, status: 'refunded' },
+            wardenTasks: updatedTasks,
+            driverTab: 'booking',
+            driverScreen: 'S3',
+            toasts: withToast(state, 'driver', '₹170 credited instantly to wallet.', 'success')
+          };
+        }
+
+        // H9: Guard WARDEN_ACTION so an already-resolved task cannot double-count response stats
+        case 'WARDEN_ACTION': {
+          const targetTask = state.wardenTasks.find(t => t.id === action.taskId);
+          if (!targetTask || targetTask.status === 'resolved') {
+            return state;
+          }
+
+          const elapsed = Math.max(1, Math.floor((Date.now() - action.taskTimestamp) / 1000));
+          const formattedTime = elapsed < 60 ? `${elapsed}s` : `${Math.floor(elapsed / 60)}m ${elapsed % 60}s`;
+
+          const updatedTasks = state.wardenTasks.map(t => {
+            if (t.id === action.taskId) {
+              return {
+                ...t,
+                status: 'resolved',
+                resolutionText: `${action.label} in ${formattedTime}`,
+                elapsedSec: elapsed
+              };
+            }
+            return t;
+          });
+
+          return {
+            ...state,
+            wardenTasks: updatedTasks,
+            resolvedTasksCount: state.resolvedTasksCount + 1,
+            totalResponseTimeSec: state.totalResponseTimeSec + elapsed,
+            toasts: withToast(state, 'warden', `Task recorded: ${action.label}`, 'info')
+          };
+        }
+
+        case 'APPLY_SCENARIO':
+          return buildScenarioState(state, action.scenarioId);
+
+        case 'RESET_ALL':
+          return INITIAL_STATE;
+
+        default:
+          return state;
+      }
+    }
+
+    // Helper: Stores lastReleaseWaived so S3 Breakdown matches Ledger, Toast, and Wallet
+    function executeNoShowRelease(state, reason) {
+      if (state.booking.status !== 'active') return state;
+
+      const updatedBays = state.bays.map(b => b.id === 'B-08' ? { ...b, status: 'available' } : b);
+      const wasFirstEligible = state.booking.firstNoShowEligible;
+      const creditAmount = wasFirstEligible ? 120 : 90;
+
+      const newLedger = [
+        {
+          id: 'tx-' + Date.now(),
+          title: wasFirstEligible ? 'No-Show Credit (First Fee Waived)' : 'No-Show Credit (75% Credited)',
+          amount: creditAmount,
+          type: 'credit',
+          time: 'Just now'
+        },
+        ...state.walletLedger
+      ];
+
+      return {
+        ...state,
+        walletBalance: state.walletBalance + creditAmount,
+        walletLedger: newLedger,
+        bays: updatedBays,
+        booking: {
+          ...state.booking,
+          status: 'released',
+          secondsRemaining: 0,
+          firstNoShowEligible: false,
+          lastReleaseWaived: wasFirstEligible,
+        },
+        driverTab: 'booking',
+        driverScreen: 'S3',
+        activeModal: null,
+        toasts: withToast(
+          state,
+          'driver',
+          wasFirstEligible ? 'Bay released. ₹120 credited (First fee waived).' : 'Bay released. ₹90 credited (25% fee retained).',
+          'info'
+        )
+      };
+    }
+
+    // Helper: Coherent Scenario Snapshots (H5 fixes Scenario 8)
+    function buildScenarioState(state, scenarioId) {
+      switch (scenarioId) {
+        case 1:
+          return {
+            ...INITIAL_STATE,
+            autoReleaseActive: false,
+            driverScreen: 'S0',
+            driverTab: 'explore',
+            activeRole: 'driver'
+          };
+
+        case 2:
+          return {
+            ...INITIAL_STATE,
+            autoReleaseActive: true,
+            driverScreen: 'S0',
+            driverTab: 'explore',
+            activeRole: 'driver'
+          };
+
+        case 3:
+          return {
+            ...INITIAL_STATE,
+            bays: INITIAL_BAYS.map(b => b.id === 'B-08' ? { ...b, status: 'reserved_unclaimed' } : b),
+            walletBalance: 130,
+            walletLedger: [
+              { id: 'tx-s3', title: 'Parking Pass: Bay B-08 (9:00 - 11:00 AM)', amount: 120, type: 'debit', time: '9:00 AM' },
+              { id: 'tx-0', title: 'Opening Balance', amount: 250, type: 'credit', time: '8:45 AM' }
+            ],
+            booking: {
+              ...INITIAL_STATE.booking,
+              status: 'active',
+              secondsRemaining: 840,
+              firstNoShowEligible: true,
+              lastReleaseWaived: false
+            },
+            driverTab: 'booking',
+            driverScreen: 'S2',
+            nearZone: false,
+            activeRole: 'driver'
+          };
+
+        case 4:
+          return {
+            ...INITIAL_STATE,
+            bays: INITIAL_BAYS,
+            walletBalance: 250,
+            walletLedger: [
+              { id: 'tx-s4-c', title: 'No-Show Credit (First Fee Waived)', amount: 120, type: 'credit', time: '9:16 AM' },
+              { id: 'tx-s4-d', title: 'Parking Pass: Bay B-08 (9:00 - 11:00 AM)', amount: 120, type: 'debit', time: '9:00 AM' },
+              { id: 'tx-0', title: 'Opening Balance', amount: 250, type: 'credit', time: '8:45 AM' }
+            ],
+            booking: {
+              ...INITIAL_STATE.booking,
+              status: 'released',
+              secondsRemaining: 0,
+              firstNoShowEligible: false,
+              lastReleaseWaived: true
+            },
+            driverTab: 'booking',
+            driverScreen: 'S3',
+            activeRole: 'driver'
+          };
+
+        case 5:
+          return {
+            ...INITIAL_STATE,
+            bays: INITIAL_BAYS.map(b => b.id === 'B-08' ? { ...b, status: 'reserved_checked_in' } : b),
+            walletBalance: 130,
+            walletLedger: [
+              { id: 'tx-s5-d', title: 'Parking Pass: Bay B-08 (9:00 - 11:00 AM)', amount: 120, type: 'debit', time: '9:00 AM' },
+              { id: 'tx-0', title: 'Opening Balance', amount: 250, type: 'credit', time: '8:45 AM' }
+            ],
+            booking: {
+              ...INITIAL_STATE.booking,
+              status: 'checked_in',
+              secondsRemaining: 0,
+            },
+            squatterPresent: true,
+            nearZone: true,
+            driverTab: 'booking',
+            driverScreen: 'S4',
+            activeRole: 'driver'
+          };
+
+        case 6:
+          return {
+            ...INITIAL_STATE,
+            walletBalance: 130,
+            walletLedger: [
+              { id: 'tx-s6-d', title: 'Parking Pass: Bay B-08 (9:00 - 11:00 AM)', amount: 120, type: 'debit', time: '9:00 AM' },
+              { id: 'tx-0', title: 'Opening Balance', amount: 250, type: 'credit', time: '8:45 AM' }
+            ],
+            bays: INITIAL_BAYS.map(b => {
+              if (b.id === 'B-08') return { ...b, status: 'occupied_by_squatter' };
+              if (b.id === 'B-14') return { ...b, status: 'reserved_checked_in' };
+              return b;
+            }),
+            booking: {
+              ...INITIAL_STATE.booking,
+              status: 'checked_in',
+              conflictSubmitted: true,
+              conflictResult: 'reassigned',
+              reassignedBay: 'B-14',
+              enteredPlate: '4021'
+            },
+            wardenTasks: [
+              {
+                id: 'task-scen-6',
+                bay: 'B-08',
+                plate: '4021',
+                timestamp: Date.now() - 120000,
+                status: 'pending',
+                resolutionText: null,
+                elapsedSec: 120,
+                outcomeDetail: 'Driver reassigned to Bay B-14'
+              }
+            ],
+            driverTab: 'booking',
+            driverScreen: 'S6',
+            activeRole: 'driver'
+          };
+
+        case 7:
+          return {
+            ...INITIAL_STATE,
+            walletBalance: 130,
+            walletLedger: [
+              { id: 'tx-s7-d', title: 'Parking Pass: Bay B-08 (9:00 - 11:00 AM)', amount: 120, type: 'debit', time: '9:00 AM' },
+              { id: 'tx-0', title: 'Opening Balance', amount: 250, type: 'credit', time: '8:45 AM' }
+            ],
+            zoneFullBranch: true,
+            bays: INITIAL_BAYS.map(b => {
+              if (b.id === 'B-08') return { ...b, status: 'occupied_by_squatter' };
+              if (b.id === 'B-14') return { ...b, status: 'occupied' };
+              return b;
+            }),
+            booking: {
+              ...INITIAL_STATE.booking,
+              status: 'checked_in',
+              conflictSubmitted: true,
+              conflictResult: 'zone_full',
+              enteredPlate: '4021'
+            },
+            wardenTasks: [
+              {
+                id: 'task-scen-7',
+                bay: 'B-08',
+                plate: '4021',
+                timestamp: Date.now() - 85000,
+                status: 'pending',
+                resolutionText: null,
+                elapsedSec: 85,
+                outcomeDetail: 'Driver reviewing alternatives'
+              }
+            ],
+            driverTab: 'booking',
+            driverScreen: 'S6',
+            activeRole: 'driver'
+          };
+
+        // H5: Scenario 8 inherits Scenario 6's coherent driver state (B-08 squatter, B-14 booked, wallet 130)
+        case 8:
+          return {
+            ...INITIAL_STATE,
+            walletBalance: 130,
+            walletLedger: [
+              { id: 'tx-s8-d', title: 'Parking Pass: Bay B-08 (9:00 - 11:00 AM)', amount: 120, type: 'debit', time: '9:00 AM' },
+              { id: 'tx-0', title: 'Opening Balance', amount: 250, type: 'credit', time: '8:45 AM' }
+            ],
+            bays: INITIAL_BAYS.map(b => {
+              if (b.id === 'B-08') return { ...b, status: 'occupied_by_squatter' };
+              if (b.id === 'B-14') return { ...b, status: 'reserved_checked_in' };
+              return b;
+            }),
+            booking: {
+              ...INITIAL_STATE.booking,
+              status: 'checked_in',
+              conflictSubmitted: true,
+              conflictResult: 'reassigned',
+              reassignedBay: 'B-14',
+              enteredPlate: '4021'
+            },
+            driverTab: 'booking',
+            driverScreen: 'S6',
+            activeRole: 'warden',
+            wardenTab: 'tasks',
+            wardenTasks: [
+              {
+                id: 'task-scen-8',
+                bay: 'B-08',
+                plate: '4021',
+                timestamp: Date.now() - 65000,
+                status: 'pending',
+                resolutionText: null,
+                elapsedSec: 65,
+                outcomeDetail: 'Driver reassigned to Bay B-14'
+              }
+            ]
+          };
+
+        default:
+          return state;
+      }
+    }
+
+    // --- WALLET NUMBER TWEEN HOOK (400ms) ---
+    function useAnimatedNumber(targetValue, duration = 400) {
+      const [displayValue, setDisplayValue] = useState(targetValue);
+      const prevValueRef = useRef(targetValue);
+
+      useEffect(() => {
+        const startValue = prevValueRef.current;
+        const diff = targetValue - startValue;
+        if (diff === 0) return;
+
+        const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (prefersReduced) {
+          setDisplayValue(targetValue);
+          prevValueRef.current = targetValue;
+          return;
+        }
+
+        let startTime = null;
+        let rafId = null;
+
+        const step = (timestamp) => {
+          if (!startTime) startTime = timestamp;
+          const elapsed = timestamp - startTime;
+          const progress = Math.min(1, elapsed / duration);
+          const eased = 1 - Math.pow(1 - progress, 3);
+          setDisplayValue(Math.round(startValue + diff * eased));
+
+          if (progress < 1) {
+            rafId = requestAnimationFrame(step);
+          } else {
+            prevValueRef.current = targetValue;
+          }
+        };
+
+        rafId = requestAnimationFrame(step);
+        return () => {
+          if (rafId) cancelAnimationFrame(rafId);
+        };
+      }, [targetValue, duration]);
+
+      return displayValue;
+    }
+
+    // =========================================================================
+    // INLINE SVG ICONS (STRICTLY NO UNICODE ARROWS OR CHECKS AS ICONS)
+    // =========================================================================
+    const Icon = {
+      PinP: () => (
+        <svg viewBox="0 0 24 24" className="w-full h-full fill-current" aria-hidden="true">
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm-1 11.5v-7h2.5c1.38 0 2.5 1.12 2.5 2.5s-1.12 2.5-2.5 2.5H11v2zm0-4.5h2c.55 0 1-.45 1-1s-.45-1-1-1h-2v2z"/>
+        </svg>
+      ),
+      CarTop: () => (
+        <svg viewBox="0 0 24 24" className="w-full h-full fill-current" aria-hidden="true">
+          <path d="M7 2.5C5.34 2.5 4 3.84 4 5.5v13c0 1.66 1.34 3 3 3h10c1.66 0 3-1.34 3-3v-13c0-1.66-1.34-3-3-3H7zm.2 3.5h9.6l-.7 3.2H7.9L7.2 6zm.7 9.2h8.2l.7 2.8H7.2l.7-2.8z"/>
+        </svg>
+      ),
+      Clock: () => (
+        <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+      ),
+      Check: () => (
+        <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-current" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      ),
+      CheckAnimated: () => (
+        <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-current" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polyline points="20 6 9 17 4 12" className="animate-check-draw"></polyline>
+        </svg>
+      ),
+      Spinner: () => (
+        <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-current animate-spin" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+          <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+        </svg>
+      ),
+      AlertTriangle: () => (
+        <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+      ),
+      Pin: () => (
+        <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+          <circle cx="12" cy="10" r="3"></circle>
+        </svg>
+      ),
+      Wallet: () => (
+        <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"></path>
+          <path d="M4 6v12c0 1.1.9 2 2 2h14v-4"></path>
+          <path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z"></path>
+        </svg>
+      ),
+      Shield: () => (
+        <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+      ),
+      Navigation: () => (
+        <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+        </svg>
+      ),
+      Lock: () => (
+        <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+      ),
+      Info: () => (
+        <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+      ),
+      ChevronRight: () => (
+        <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-current" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      ),
+      ArrowRight: () => (
+        <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-current" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+      ),
+      ArrowDownLeft: () => (
+        <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-current" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <line x1="17" y1="7" x2="7" y2="17"></line>
+          <polyline points="17 17 7 17 7 7"></polyline>
+        </svg>
+      ),
+      ArrowUpRight: () => (
+        <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-current" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <line x1="7" y1="17" x2="17" y2="7"></line>
+          <polyline points="7 7 17 7 17 17"></polyline>
+        </svg>
+      ),
+      ChevronDown: () => (
+        <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      ),
+      Sliders: () => (
+        <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <line x1="4" y1="21" x2="4" y2="14"></line>
+          <line x1="4" y1="10" x2="4" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12" y2="3"></line>
+          <line x1="20" y1="21" x2="20" y2="16"></line>
+          <line x1="20" y1="12" x2="20" y2="3"></line>
+          <line x1="1" y1="14" x2="7" y2="14"></line>
+          <line x1="9" y1="8" x2="15" y2="8"></line>
+          <line x1="17" y1="16" x2="23" y2="16"></line>
+        </svg>
+      ),
+      Hourglass: () => (
+        <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M5 22h14"></path>
+          <path d="M5 2h14"></path>
+          <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"></path>
+          <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"></path>
+        </svg>
+      ),
+      Ticket: () => (
+        <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path>
+          <path d="M13 5v2"></path>
+          <path d="M13 17v2"></path>
+          <path d="M13 11v2"></path>
+        </svg>
+      )
+    };
+
+    // =========================================================================
+    // B8: REPEATED SECTION HEADER PATTERN (SMALL ICON CHIP + TITLE)
+    // =========================================================================
+    function SectionHeader({ icon, title, rightContent = null, dark = false }) {
+      return (
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div className={`w-6 h-6 rounded-lg flex items-center justify-center p-1 shrink-0 ${
+              dark ? 'bg-slate-800 text-blue-400 border border-slate-700' : 'bg-blue-50 text-brandBlue border border-blue-100'
+            }`}>
+              {icon}
+            </div>
+            <span className={`font-display text-xs font-bold uppercase tracking-[0.06em] ${dark ? 'text-slate-300' : 'text-slate-600'}`}>
+              {title}
+            </span>
+          </div>
+          {rightContent}
+        </div>
+      );
+    }
+
+    // =========================================================================
+    // J1: MODULE-SCOPED HALO ICON (PREVENTS REMOUNT ON WALLET FRAME TICKS)
+    // =========================================================================
+    function HaloIcon({ tone = 'emerald', size = 'lg', className = '', children }) {
+      const ringTone = tone === 'emerald' ? 'bg-emerald-400/30' : tone === 'blue' ? 'bg-blue-400/30' : 'bg-slate-300/40';
+      const circleTone = tone === 'emerald'
+        ? 'bg-emerald-100 text-emerald-600'
+        : tone === 'blue'
+          ? 'bg-blue-100 text-brandBlue'
+          : 'bg-slate-100 text-slate-600';
+      const outerSize = size === 'md' ? 'w-14 h-14' : 'w-16 h-16';
+      const innerSize = size === 'md' ? 'w-12 h-12' : 'w-14 h-14 shadow-subtle';
+      const iconSize = size === 'md' ? 'w-6 h-6' : 'w-7 h-7';
+
+      return (
+        <div className={`relative ${outerSize} mx-auto flex items-center justify-center ${className}`}>
+          {tone !== 'neutral' && (
+            <span className={`absolute inset-0 rounded-full ${ringTone} animate-halo pointer-events-none`}></span>
+          )}
+          <div className={`relative ${innerSize} rounded-full ${circleTone} flex items-center justify-center`}>
+            <div className={iconSize}>{children}</div>
+          </div>
+        </div>
+      );
+    }
+
+    // =========================================================================
+    // H7 & B2: UNIFIED BUTTON SYSTEM HELPER (Btn with done prop)
+    // =========================================================================
+    function Btn({
+      variant = 'primary',
+      onClick,
+      disabled = false,
+      done = false,
+      reason = null,
+      demoChip = null,
+      leadingIcon = null,
+      trailingIcon = null,
+      sublabel = null,
+      children,
+      className = '',
+      ariaLabel = undefined
+    }) {
+      // H7: Completed/Applied state renders as an emerald-50 chip with border & check icon (no lock icon, no duplicate reason)
+      if (done) {
+        return (
+          <div
+            role="status"
+            aria-label={ariaLabel}
+            className={`w-full h-12 px-4 rounded-2xl bg-emerald-50 text-emerald-800 border border-emerald-200 font-display font-bold text-sm flex items-center justify-center gap-2 select-none ${className}`}
+          >
+            <div className="w-4 h-4 shrink-0 text-emerald-600"><Icon.Check /></div>
+            <span>{children}</span>
+          </div>
+        );
+      }
+
+      if (disabled) {
+        return (
+          <div className={`w-full space-y-1.5 ${className}`}>
+            <button
+              type="button"
+              disabled
+              aria-label={ariaLabel}
+              className="w-full h-14 px-4 rounded-2xl bg-slate-200/90 text-slate-500 border border-slate-300 font-display font-bold text-base flex items-center justify-center gap-2 cursor-not-allowed select-none"
+            >
+              <div className="w-4 h-4 shrink-0 text-slate-500"><Icon.Lock /></div>
+              <span className="truncate">{children}</span>
+            </button>
+            {reason && (
+              <div className="flex flex-wrap items-center justify-center gap-1.5 text-sm text-slate-600 font-medium px-2 text-center">
+                <span>{reason}</span>
+                {demoChip && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 border border-amber-300 text-amber-900 rounded-md text-xs font-semibold">
+                    <span className="font-display font-bold uppercase tracking-wider text-amber-800">DEMO:</span>
+                    <span>{demoChip}</span>
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      const styles = {
+        primary: 'h-14 px-5 rounded-2xl bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] text-white font-display font-bold text-base shadow-md shadow-blue-900/15 hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-brandBlue focus:ring-offset-2',
+        success: 'h-14 px-5 rounded-2xl bg-brandEmerald hover:bg-emerald-700 text-white font-display font-bold text-base shadow-md shadow-emerald-900/15 focus:outline-none focus:ring-2 focus:ring-brandEmerald focus:ring-offset-2',
+        navy: 'h-14 px-5 rounded-2xl bg-brandNavy hover:bg-slate-800 text-white font-display font-bold text-base shadow-md focus:outline-none focus:ring-2 focus:ring-brandNavy focus:ring-offset-2',
+        secondary: 'h-12 px-4 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 border-[1.5px] border-borderSubtle font-display font-semibold text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-400',
+        destructive: 'h-14 px-5 rounded-2xl bg-white hover:bg-rose-50 text-brandRose border-[1.5px] border-brandRose font-display font-bold text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-brandRose',
+        destructiveSolid: 'h-14 px-5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-display font-bold text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-600',
+        tertiary: 'min-h-[44px] px-3 py-2 rounded-xl text-sm font-semibold text-slate-500 hover:text-rose-600 underline underline-offset-4 focus:outline-none focus:ring-2 focus:ring-slate-400'
+      };
+
+      return (
+        <button
+          type="button"
+          onClick={onClick}
+          aria-label={ariaLabel}
+          className={`w-full flex items-center justify-center gap-2.5 tap-scale transition-all ${styles[variant] || styles.primary} ${className}`}
+        >
+          {leadingIcon && <div className="w-5 h-5 shrink-0">{leadingIcon}</div>}
+          {sublabel ? (
+            <div className="flex flex-col items-center text-center leading-tight">
+              <span className="font-display font-bold text-base">{children}</span>
+              <span className="font-sans font-medium text-xs opacity-90 mt-0.5 tabular-nums">{sublabel}</span>
+            </div>
+          ) : (
+            <span>{children}</span>
+          )}
+          {trailingIcon && <div className="w-5 h-5 shrink-0">{trailingIcon}</div>}
+        </button>
+      );
+    }
+
+    // =========================================================================
+    // ROOT APPLICATION COMPONENT
+    // =========================================================================
+    function SwiftParkMain() {
+      const [state, dispatch] = useReducer(rootReducer, INITIAL_STATE);
+
+      useEffect(() => {
+        const timer = setInterval(() => {
+          dispatch({ type: 'CLOCK_TICK' });
+        }, 1000);
+        return () => clearInterval(timer);
+      }, []);
+
+      useEffect(() => {
+        if (state.toasts.driver) {
+          const t = setTimeout(() => dispatch({ type: 'DISMISS_TOAST', target: 'driver' }), 3200);
+          return () => clearTimeout(t);
+        }
+      }, [state.toasts.driver]);
+
+      useEffect(() => {
+        if (state.toasts.warden) {
+          const t = setTimeout(() => dispatch({ type: 'DISMISS_TOAST', target: 'warden' }), 3500);
+          return () => clearTimeout(t);
+        }
+      }, [state.toasts.warden]);
+
+      useEffect(() => {
+        if (state.activeModal === 'conflict_sheet' && state.lookupStep > 0 && state.lookupStep < 3) {
+          const t = setTimeout(() => {
+            dispatch({ type: 'STEP_LOOKUP', step: state.lookupStep + 1, plate: state.booking.enteredPlate });
+          }, 700);
+          return () => clearTimeout(t);
+        } else if (state.activeModal === 'conflict_sheet' && state.lookupStep === 3) {
+          const t = setTimeout(() => {
+            dispatch({ type: 'RESOLVE_CONFLICT_SEARCH', plate: state.booking.enteredPlate });
+          }, 700);
+          return () => clearTimeout(t);
+        }
+      }, [state.activeModal, state.lookupStep, state.booking.enteredPlate]);
+
+      const formatMmSs = (totalSec) => {
+        const m = Math.floor(totalSec / 60);
+        const s = totalSec % 60;
+        return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+      };
+
+      return (
+        <div className="w-full flex flex-col xl:flex-row items-center xl:items-start justify-center gap-8 max-w-7xl mx-auto">
+          
+          <div className="flex flex-col md:flex-row items-center justify-center gap-8 w-full xl:w-auto">
+            
+            {/* DRIVER PHONE SHELL */}
+            <div className={`w-full md:w-auto ${state.activeRole !== 'driver' ? 'hidden xl:block' : 'block'}`}>
+              <DeviceShell label="Driver Experience" theme="driver">
+                <DriverAppView state={state} dispatch={dispatch} formatMmSs={formatMmSs} />
+              </DeviceShell>
+            </div>
+
+            {/* WARDEN PHONE SHELL */}
+            <div className={`w-full md:w-auto ${state.activeRole !== 'warden' ? 'hidden xl:block' : 'block'}`}>
+              <DeviceShell label="Field Warden Companion" theme="warden">
+                <WardenAppView state={state} dispatch={dispatch} />
+              </DeviceShell>
+            </div>
+
+          </div>
+
+          {/* Reviewer Tools Handle (44px icon handle on <=480px; labelled pill on >=481px) */}
+          <button
+            type="button"
+            onClick={() => dispatch({ type: 'TOGGLE_REVIEWER_DRAWER' })}
+            aria-label="Open Reviewer Tools"
+            className="fixed z-40 bg-brandNavy/85 hover:bg-brandNavy text-white backdrop-blur-sm border border-slate-700 shadow-floating flex items-center justify-center gap-2 text-xs font-display font-bold tap-scale focus:outline-none focus:ring-2 focus:ring-brandBlue max-[480px]:top-[38%] max-[480px]:right-0 max-[480px]:w-11 max-[480px]:h-11 max-[480px]:rounded-l-2xl max-[480px]:border-r-0 min-[481px]:bottom-5 min-[481px]:right-5 min-[481px]:min-h-[44px] min-[481px]:rounded-full min-[481px]:px-4 min-[481px]:py-2.5"
+          >
+            <div className="w-4 h-4 text-brandBlue shrink-0"><Icon.Sliders /></div>
+            <span className="hidden min-[481px]:inline">Reviewer Tools</span>
+          </button>
+
+          {/* Reviewer Tools Drawer */}
+          {state.reviewerDrawerOpen && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end justify-center">
+              <div className="w-full max-w-xl bg-slate-900 border-t border-slate-700 rounded-t-3xl p-6 text-white max-h-[85vh] overflow-y-auto animate-sheet custom-scroll space-y-5">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                  <div>
+                    <h3 className="font-display text-lg font-bold text-slate-100">Reviewer Tools</h3>
+                    <p className="text-sm text-slate-400">Assignment validation controls & scenario snapshots</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => dispatch({ type: 'TOGGLE_REVIEWER_DRAWER' })}
+                    className="min-h-[44px] px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-full text-xs font-display font-bold tap-scale focus:outline-none focus:ring-2 focus:ring-brandBlue"
+                  >
+                    Done
+                  </button>
+                </div>
+
+                {/* Role Switcher on <1280px */}
+                <div className="xl:hidden bg-slate-950 p-1 rounded-2xl border border-slate-800 flex text-xs font-display font-bold">
+                  <button
+                    type="button"
+                    onClick={() => dispatch({ type: 'SWITCH_ROLE', role: 'driver' })}
+                    className={`flex-1 min-h-[44px] py-2 rounded-xl transition-all ${state.activeRole === 'driver' ? 'bg-brandBlue text-white shadow-sm' : 'text-slate-400'}`}
+                  >
+                    Driver App View
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => dispatch({ type: 'SWITCH_ROLE', role: 'warden' })}
+                    className={`flex-1 min-h-[44px] py-2 rounded-xl transition-all ${state.activeRole === 'warden' ? 'bg-wardenAmber text-slate-950 shadow-sm' : 'text-slate-400'}`}
+                  >
+                    Warden Companion View
+                  </button>
+                </div>
+
+                {/* Simulation Variables */}
+                <div className="space-y-2.5">
+                  <span className="text-xs font-display font-bold uppercase tracking-wider text-slate-400">Simulation Variables</span>
+                  
+                  <label className="flex items-center justify-between p-3.5 bg-slate-950 rounded-2xl border border-slate-800 cursor-pointer">
+                    <div>
+                      <span className="text-sm font-semibold text-slate-200 block">Simulate GPS Near Zone (&lt;100 m)</span>
+                      <span className="text-xs text-slate-400">Enables arrival check-in CTA</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={state.nearZone}
+                      onChange={(e) => dispatch({ type: 'SET_NEAR_ZONE', value: e.target.checked })}
+                      className="w-5 h-5 accent-blue-600 rounded cursor-pointer"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between p-3.5 bg-slate-950 rounded-2xl border border-slate-800 cursor-pointer">
+                    <div>
+                      <span className="text-sm font-semibold text-slate-200 block">Squatter Parked in Bay B-08</span>
+                      <span className="text-xs text-slate-400">Triggers conflict recovery on arrival</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={state.squatterPresent}
+                      onChange={(e) => dispatch({ type: 'SET_SQUATTER', value: e.target.checked })}
+                      className="w-5 h-5 accent-rose-600 rounded cursor-pointer"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between p-3.5 bg-slate-950 rounded-2xl border border-slate-800 cursor-pointer">
+                    <div>
+                      <span className="text-sm font-semibold text-slate-200 block">Simulate All Bays Full (Build 2 Fallback)</span>
+                      <span className="text-xs text-slate-400">Forces Brigade Rd transfer or instant refund</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={state.zoneFullBranch}
+                      onChange={(e) => dispatch({ type: 'SET_ZONE_FULL_BRANCH', value: e.target.checked })}
+                      className="w-5 h-5 accent-amber-500 rounded cursor-pointer"
+                    />
+                  </label>
+                </div>
+
+                {/* Instant Triggers */}
+                <div className="space-y-2 pt-1">
+                  <span className="text-xs font-display font-bold uppercase tracking-wider text-slate-400 block">Instant Triggers</span>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => dispatch({ type: 'TRIGGER_RELEASE', reason: 'timeout' })}
+                      disabled={state.booking.status !== 'active'}
+                      className={`min-h-[44px] p-3 rounded-2xl border text-xs font-display font-bold transition-all ${
+                        state.booking.status === 'active'
+                          ? 'bg-slate-800 hover:bg-slate-700 text-amber-300 border-amber-600/40 tap-scale'
+                          : 'bg-slate-950 text-slate-600 border-slate-800 cursor-not-allowed'
+                      }`}
+                    >
+                      Fast-Forward Timer to 0
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => dispatch({ type: 'RESET_ALL' })}
+                      className="min-h-[44px] p-3 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-2xl text-xs font-display font-bold tap-scale"
+                    >
+                      Reset Entire Prototype
+                    </button>
+                  </div>
+                </div>
+
+                {/* Scenarios 1-8 */}
+                <div className="space-y-2 pt-2 border-t border-slate-800">
+                  <span className="text-xs font-display font-bold uppercase tracking-wider text-slate-400 block">
+                    Jump to Evaluator Scenarios
+                  </span>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-semibold">
+                    <button type="button" onClick={() => dispatch({ type: 'APPLY_SCENARIO', scenarioId: 1 })} className="min-h-[44px] p-2.5 bg-slate-950 hover:bg-slate-800 rounded-xl border border-slate-800 text-left tap-scale">1. Problem Today</button>
+                    <button type="button" onClick={() => dispatch({ type: 'APPLY_SCENARIO', scenarioId: 2 })} className="min-h-[44px] p-2.5 bg-slate-950 hover:bg-slate-800 rounded-xl border border-slate-800 text-left tap-scale">2. Fix Lens</button>
+                    <button type="button" onClick={() => dispatch({ type: 'APPLY_SCENARIO', scenarioId: 3 })} className="min-h-[44px] p-2.5 bg-slate-950 hover:bg-slate-800 rounded-xl border border-slate-800 text-left tap-scale">3. Active Booking</button>
+                    <button type="button" onClick={() => dispatch({ type: 'APPLY_SCENARIO', scenarioId: 4 })} className="min-h-[44px] p-2.5 bg-slate-950 hover:bg-slate-800 rounded-xl border border-slate-800 text-left tap-scale">4. Auto-Release</button>
+                    <button type="button" onClick={() => dispatch({ type: 'APPLY_SCENARIO', scenarioId: 5 })} className="min-h-[44px] p-2.5 bg-slate-950 hover:bg-slate-800 rounded-xl border border-slate-800 text-left tap-scale">5. Occupied Bay</button>
+                    <button type="button" onClick={() => dispatch({ type: 'APPLY_SCENARIO', scenarioId: 6 })} className="min-h-[44px] p-2.5 bg-slate-950 hover:bg-slate-800 rounded-xl border border-slate-800 text-left tap-scale">6. Reassigned B-14</button>
+                    <button type="button" onClick={() => dispatch({ type: 'APPLY_SCENARIO', scenarioId: 7 })} className="min-h-[44px] p-2.5 bg-slate-950 hover:bg-slate-800 rounded-xl border border-slate-800 text-left tap-scale">7. Zone Full</button>
+                    <button type="button" onClick={() => dispatch({ type: 'APPLY_SCENARIO', scenarioId: 8 })} className="min-h-[44px] p-2.5 bg-slate-950 hover:bg-slate-800 rounded-xl border border-slate-800 text-left tap-scale">8. Warden Task</button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+        </div>
+      );
+    }
+
+    // =========================================================================
+    // DEVICE SHELL
+    // =========================================================================
+    function DeviceShell({ children, label, theme = 'driver' }) {
+      return (
+        <div className="flex flex-col items-center">
+          <div className="hidden min-[481px]:flex items-center gap-2 mb-2 text-xs font-display font-bold uppercase tracking-wider text-slate-400">
+            <span className={`w-2 h-2 rounded-full ${theme === 'warden' ? 'bg-wardenAmber' : 'bg-brandBlue'}`}></span>
+            <span>{label}</span>
+          </div>
+
+          <div className="relative w-screen h-[100dvh] min-[481px]:w-[390px] min-[481px]:h-[min(844px,calc(100dvh-64px))] bg-surfaceBg min-[481px]:rounded-[44px] min-[481px]:shadow-device flex flex-col overflow-hidden border-0 min-[481px]:border-[8px] min-[481px]:border-slate-800">
+            
+            {/* Status Bar (Desktop frame only) */}
+            <div className={`hidden min-[481px]:flex justify-between items-center px-7 pt-3 pb-1 text-xs font-bold shrink-0 z-40 select-none ${
+              theme === 'warden' ? 'bg-wardenBg text-slate-300' : 'bg-surfaceBg text-slate-800'
+            }`}>
+              <span className="font-display font-semibold tabular-nums">9:41</span>
+              <div className="w-24 h-4 bg-slate-800 rounded-full mx-auto -mt-1 opacity-90 flex items-center justify-center">
+                <div className="w-8 h-1 bg-slate-700 rounded-full"></div>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span>5G</span>
+                <div className="w-4 h-2.5 border border-current rounded-sm relative">
+                  <div className="absolute inset-0.5 bg-current rounded-sm"></div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-1 flex flex-col overflow-hidden relative">
+              {children}
+            </div>
+
+            <div className="hidden min-[481px]:block w-32 h-1 bg-slate-300/70 rounded-full mx-auto my-1 shrink-0 z-40"></div>
+          </div>
+        </div>
+      );
+    }
+
+    // =========================================================================
+    // H2: BOOKING TAB EMPTY STATE COMPONENT
+    // =========================================================================
+    function ScreenBookingEmpty({ dispatch }) {
+      return (
+        <div className="bg-white rounded-3xl border border-borderSubtle shadow-raised p-6 text-center space-y-4 animate-screen my-2">
+          <div className="w-16 h-16 rounded-full bg-blue-50 text-brandBlue border border-blue-100 flex items-center justify-center mx-auto shadow-subtle">
+            <div className="w-8 h-8"><Icon.Clock /></div>
+          </div>
+          <div className="space-y-1.5">
+            <h2 className="font-display text-[24px] leading-[30px] font-bold text-brandNavy tracking-tight">
+              No active booking
+            </h2>
+            <p className="text-sm text-inkMuted leading-relaxed px-2">
+              Reserve a bay from Explore to start a 15-minute arrival window.
+            </p>
+          </div>
+          <div className="pt-1">
+            <Btn
+              variant="primary"
+              onClick={() => dispatch({ type: 'NAVIGATE_DRIVER_TAB', tab: 'explore' })}
+              trailingIcon={<Icon.ArrowRight />}
+            >
+              Go to Explore
+            </Btn>
+          </div>
+        </div>
+      );
+    }
+
+    // =========================================================================
+    // DRIVER APPLICATION VIEW (H1, H2, H3, H7, H8, B8)
+    // =========================================================================
+    function DriverAppView({ state, dispatch, formatMmSs }) {
+      const { booking, driverTab, driverScreen, toasts } = state;
+      const isBookingActive = booking.status === 'active';
+      const driverToast = toasts.driver;
+      const animatedBalance = useAnimatedNumber(state.walletBalance, 400);
+
+      const canReserve = booking.status === 'none' || booking.status === 'released';
+      let reserveDisableReason = null;
+      let reserveDemoChip = null;
+      if (!canReserve) {
+        if (booking.status === 'active' || booking.status === 'checked_in') {
+          reserveDisableReason = 'You already have a booking in progress.';
+        } else {
+          reserveDisableReason = 'Booking complete.';
+          reserveDemoChip = 'Reset in Reviewer Tools to run again.';
+        }
+      }
+
+      // B8 & H1 & H2: Sticky Bottom Action Bar (hidden on Wallet and on empty Booking tab)
+      const renderStickyActionBar = () => {
+        if (driverTab === 'wallet') return null;
+        if (driverTab === 'booking' && booking.status === 'none') return null;
+
+        const barClasses = "shrink-0 bg-white/95 backdrop-blur-lg border-t border-borderSubtle shadow-stickyBar px-5 py-3.5 z-20 space-y-2.5";
+
+        if (driverTab === 'explore' && driverScreen === 'S0') {
+          return (
+            <div className={barClasses}>
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-slate-500">Selected:</span>
+                  <span className="font-display font-bold text-inkPrimary">Bay B-08</span>
+                </div>
+                <div className="font-display font-extrabold text-brandBlue text-base tabular-nums">
+                  ₹120 <span className="font-sans font-medium text-xs text-slate-500">/ 2 hrs</span>
+                </div>
+              </div>
+              <Btn
+                variant="primary"
+                onClick={() => dispatch({ type: 'CONFIRM_RESERVATION' })}
+                disabled={!canReserve}
+                reason={reserveDisableReason}
+                demoChip={reserveDemoChip}
+                trailingIcon={<Icon.ArrowRight />}
+              >
+                Reserve Bay B-08
+              </Btn>
+            </div>
+          );
+        }
+
+        if (driverScreen === 'S1') {
+          return (
+            <div className={barClasses}>
+              <Btn
+                variant="primary"
+                onClick={() => {
+                  dispatch({ type: 'NAVIGATE_DRIVER_TAB', tab: 'booking' });
+                  dispatch({ type: 'SET_DRIVER_SCREEN', screen: 'S2' });
+                }}
+                trailingIcon={<Icon.ChevronRight />}
+              >
+                View my booking
+              </Btn>
+            </div>
+          );
+        }
+
+        if (driverScreen === 'S2') {
+          return (
+            <div className={barClasses}>
+              <Btn
+                variant="success"
+                onClick={() => dispatch({ type: 'PERFORM_CHECK_IN' })}
+                disabled={!state.nearZone}
+                reason={!state.nearZone ? 'Move within 100 m to check in' : null}
+                demoChip={!state.nearZone ? 'Toggle GPS Near Zone in Reviewer Tools' : null}
+                trailingIcon={<Icon.Check />}
+              >
+                I have arrived — Check in
+              </Btn>
+              {/* H7: Uses done prop so applied buffer renders as an emerald-50 chip with check icon */}
+              <Btn
+                variant="secondary"
+                onClick={() => dispatch({ type: 'ADD_LATE_BUFFER' })}
+                done={booking.extensionApplied}
+                leadingIcon={<Icon.Clock />}
+              >
+                {booking.extensionApplied ? '10-minute buffer applied' : 'Running late +10 min (One-time)'}
+              </Btn>
+            </div>
+          );
+        }
+
+        if (driverScreen === 'S3') {
+          if (booking.status === 'checked_in') {
+            return (
+              <div className={barClasses}>
+                <Btn
+                  variant="primary"
+                  onClick={() => dispatch({ type: 'SET_DRIVER_SCREEN', screen: 'S4' })}
+                  trailingIcon={<Icon.ArrowRight />}
+                >
+                  Go to Bay B-08
+                </Btn>
+              </div>
+            );
+          }
+          if (booking.status === 'released') {
+            return (
+              <div className={barClasses}>
+                <Btn
+                  variant="primary"
+                  onClick={() => {
+                    dispatch({ type: 'SET_AUTO_RELEASE_LENS', value: true });
+                    dispatch({ type: 'NAVIGATE_DRIVER_TAB', tab: 'explore' });
+                    dispatch({ type: 'SET_DRIVER_SCREEN', screen: 'S0' });
+                  }}
+                  trailingIcon={<Icon.ArrowRight />}
+                >
+                  Find parking nearby
+                </Btn>
+              </div>
+            );
+          }
+          return (
+            <div className={barClasses}>
+              <Btn
+                variant="primary"
+                onClick={() => {
+                  dispatch({ type: 'NAVIGATE_DRIVER_TAB', tab: 'explore' });
+                  dispatch({ type: 'SET_DRIVER_SCREEN', screen: 'S0' });
+                }}
+                trailingIcon={<Icon.ArrowRight />}
+              >
+                Back to Explore
+              </Btn>
+            </div>
+          );
+        }
+
+        if (driverScreen === 'S4') {
+          return (
+            <div className={barClasses}>
+              <Btn
+                variant="destructive"
+                onClick={() => dispatch({ type: 'OPEN_MODAL', modal: 'conflict_sheet' })}
+                disabled={booking.conflictSubmitted}
+                reason={booking.conflictSubmitted ? 'Conflict report already submitted' : null}
+                leadingIcon={<Icon.AlertTriangle />}
+              >
+                Someone is in my spot
+              </Btn>
+              <Btn
+                variant="success"
+                onClick={() => dispatch({ type: 'COMPLETE_PARKING' })}
+                disabled={state.squatterPresent}
+                reason={state.squatterPresent ? 'Bay occupied' : null}
+                trailingIcon={<Icon.Check />}
+              >
+                Park here
+              </Btn>
+            </div>
+          );
+        }
+
+        if (driverScreen === 'S6') {
+          const isReassigned = booking.conflictResult === 'reassigned';
+          if (isReassigned) {
+            return (
+              <div className={barClasses}>
+                <Btn
+                  variant="secondary"
+                  onClick={() => dispatch({ type: 'START_NAVIGATING' })}
+                  leadingIcon={<Icon.Navigation />}
+                >
+                  {state.navigatingActive ? 'Guidance active to Bay B-14' : 'Navigate to B-14'}
+                </Btn>
+                <Btn
+                  variant="success"
+                  onClick={() => dispatch({ type: 'COMPLETE_PARKING' })}
+                  trailingIcon={<Icon.Check />}
+                >
+                  I’ve parked in B-14
+                </Btn>
+              </div>
+            );
+          }
+          return (
+            <div className={barClasses}>
+              <Btn
+                variant="navy"
+                onClick={() => dispatch({ type: 'OPEN_MODAL', modal: 'switch_zone' })}
+                sublabel="Brigade Rd Zone, 400 m, Bay A-04"
+                trailingIcon={<Icon.ArrowRight />}
+              >
+                Switch zone
+              </Btn>
+              <Btn
+                variant="success"
+                onClick={() => dispatch({ type: 'OPEN_MODAL', modal: 'refund_flow' })}
+                sublabel="₹120 refund + ₹50 credit = ₹170"
+                trailingIcon={<Icon.Check />}
+              >
+                Refund me instantly
+              </Btn>
+            </div>
+          );
+        }
+
+        return null;
+      };
+
+      return (
+        <div className="flex-1 flex flex-col bg-surfaceBg text-inkPrimary overflow-hidden relative font-sans">
+          
+          {/* Driver Phone Toast Banner */}
+          {driverToast && (
+            <div key={driverToast.id} className="absolute top-3 inset-x-4 z-50 animate-toast pointer-events-auto">
+              <div className={`px-4 py-3 rounded-2xl shadow-floating border flex items-center gap-2.5 text-xs font-semibold backdrop-blur-md ${
+                driverToast.type === 'success' ? 'bg-emerald-950/95 border-emerald-500 text-emerald-100' :
+                driverToast.type === 'danger' ? 'bg-rose-950/95 border-rose-500 text-rose-100' :
+                driverToast.type === 'warning' ? 'bg-amber-950/95 border-amber-500 text-amber-100' :
+                'bg-slate-900/95 border-slate-700 text-slate-100'
+              }`}>
+                <div className="w-4 h-4 shrink-0">
+                  {driverToast.type === 'success' ? <Icon.Check /> :
+                   driverToast.type === 'danger' ? <Icon.AlertTriangle /> :
+                   driverToast.type === 'warning' ? <Icon.AlertTriangle /> : <Icon.Info />}
+                </div>
+                <span className="flex-1 leading-snug">{driverToast.message}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Header with Wordmark, MG Road live chip, and H8 min-h-[44px] Wallet Pill */}
+          <header className="px-5 py-2.5 bg-white/95 backdrop-blur-md border-b border-borderSubtle flex items-center justify-between shrink-0 z-30">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-brandNavy text-white flex items-center justify-center p-1.5 shadow-subtle">
+                <Icon.PinP />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-display font-extrabold text-base tracking-tight text-brandNavy">SwiftPark</span>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-800">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>MG Road</span>
+                </span>
+              </div>
+            </div>
+
+            {/* H8: min-h-[44px] wallet pill */}
+            <button
+              type="button"
+              onClick={() => dispatch({ type: 'NAVIGATE_DRIVER_TAB', tab: 'wallet' })}
+              className="min-h-[44px] flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-200 text-xs font-bold text-brandNavy tap-scale focus:outline-none focus:ring-2 focus:ring-brandBlue"
+              aria-label="Open SwiftPark Wallet"
+            >
+              <div className="w-4 h-4 text-emerald-600"><Icon.Wallet /></div>
+              <span className="font-display font-bold text-sm tabular-nums">₹{animatedBalance}</span>
+            </button>
+          </header>
+
+          {/* Active Booking Mini-Bar when navigating Explore or Wallet */}
+          {isBookingActive && driverTab !== 'booking' && (
+            <button
+              type="button"
+              onClick={() => dispatch({ type: 'NAVIGATE_DRIVER_TAB', tab: 'booking' })}
+              className="mx-5 mt-2.5 px-4 py-2.5 bg-brandNavy text-white rounded-2xl shadow-raised flex items-center justify-between text-xs cursor-pointer tap-scale shrink-0 z-20 border border-blue-500/30"
+            >
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                <span className="font-display font-bold">Bay B-08</span>
+                <span className="text-slate-400">·</span>
+                <span className="font-semibold text-amber-300 tabular-nums">{formatMmSs(booking.secondsRemaining)} left to check in</span>
+              </div>
+              <span className="inline-flex items-center gap-1 font-display font-bold text-blue-300">
+                <span>View</span>
+                <span className="w-3.5 h-3.5"><Icon.ChevronRight /></span>
+              </span>
+            </button>
+          )}
+
+          {/* H1 & H2: Main Scrollable Area renders Wallet ALONE when driverTab === 'wallet' */}
+          <main className="flex-1 overflow-y-auto custom-scroll p-5 space-y-4 relative">
+            {driverTab === 'wallet' ? (
+              <ScreenWalletView state={state} animatedBalance={animatedBalance} />
+            ) : (
+              <>
+                {driverTab === 'explore' && driverScreen === 'S0' && (
+                  <ScreenS0Home state={state} dispatch={dispatch} />
+                )}
+                {driverTab === 'booking' && booking.status === 'none' && (
+                  <ScreenBookingEmpty dispatch={dispatch} />
+                )}
+                {!(driverTab === 'booking' && booking.status === 'none') && (
+                  <>
+                    {driverScreen === 'S1' && (
+                      <ScreenS1Pass state={state} dispatch={dispatch} />
+                    )}
+                    {driverScreen === 'S2' && (
+                      <ScreenS2ActiveBooking state={state} dispatch={dispatch} formatMmSs={formatMmSs} />
+                    )}
+                    {driverScreen === 'S3' && (
+                      <ScreenS3Outcome state={state} dispatch={dispatch} />
+                    )}
+                    {driverScreen === 'S4' && (
+                      <ScreenS4AtBay state={state} dispatch={dispatch} />
+                    )}
+                    {driverScreen === 'S6' && (
+                      <ScreenS6Resolution state={state} dispatch={dispatch} />
+                    )}
+                  </>
+                )}
+              </>
+            )}
+          </main>
+
+          {/* Sticky Action Bar pinned directly above Tab Bar */}
+          {renderStickyActionBar()}
+
+          {/* Bottom Tab Bar with Pill Indicator & Safe-Area Padding */}
+          <nav
+            style={{ paddingBottom: 'env(safe-area-inset-bottom, 8px)' }}
+            className="shrink-0 bg-white/95 backdrop-blur-md border-t border-borderSubtle flex items-center justify-around px-3 pt-2 pb-2 z-30"
+          >
+            <button
+              type="button"
+              onClick={() => dispatch({ type: 'NAVIGATE_DRIVER_TAB', tab: 'explore' })}
+              className={`flex-1 min-h-[48px] flex flex-col items-center justify-center gap-1 transition-colors focus:outline-none ${
+                driverTab === 'explore' ? 'text-brandBlue font-bold' : 'text-slate-400 font-medium'
+              }`}
+            >
+              <div className={`px-4 py-1 rounded-full transition-colors ${driverTab === 'explore' ? 'bg-blue-50 text-brandBlue' : ''}`}>
+                <div className="w-5 h-5"><Icon.Pin /></div>
+              </div>
+              <span className="text-xs">Explore</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => dispatch({ type: 'NAVIGATE_DRIVER_TAB', tab: 'booking' })}
+              className={`flex-1 min-h-[48px] flex flex-col items-center justify-center gap-1 relative transition-colors focus:outline-none ${
+                driverTab === 'booking' ? 'text-brandBlue font-bold' : 'text-slate-400 font-medium'
+              }`}
+            >
+              <div className={`px-4 py-1 rounded-full relative transition-colors ${driverTab === 'booking' ? 'bg-blue-50 text-brandBlue' : ''}`}>
+                <div className="w-5 h-5">
+                  <Icon.Clock />
+                </div>
+                {isBookingActive && (
+                  <span className="absolute top-0.5 right-2.5 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white"></span>
+                )}
+              </div>
+              <span className="text-xs">Booking</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => dispatch({ type: 'NAVIGATE_DRIVER_TAB', tab: 'wallet' })}
+              className={`flex-1 min-h-[48px] flex flex-col items-center justify-center gap-1 transition-colors focus:outline-none ${
+                driverTab === 'wallet' ? 'text-brandBlue font-bold' : 'text-slate-400 font-medium'
+              }`}
+            >
+              <div className={`px-4 py-1 rounded-full transition-colors ${driverTab === 'wallet' ? 'bg-blue-50 text-brandBlue' : ''}`}>
+                <div className="w-5 h-5"><Icon.Wallet /></div>
+              </div>
+              <span className="text-xs">Wallet</span>
+            </button>
+          </nav>
+
+          {/* Modal Manager */}
+          {state.activeModal && (
+            <DriverModalManager state={state} dispatch={dispatch} />
+          )}
+
+        </div>
+      );
+    }
+
+    // =========================================================================
+    // SCREEN S0: HOME / AVAILABILITY (J2 SWEEPING FLAG, J3 CONFLICT LEGEND)
+    // =========================================================================
+    function ScreenS0Home({ state, dispatch }) {
+      const { autoReleaseActive, bays, booking } = state;
+      const [explanationOpen, setExplanationOpen] = useState(false);
+
+      // J2: Track lens sweep for 700ms only when autoReleaseActive changes after mount
+      const [sweeping, setSweeping] = useState(false);
+      const prevAutoReleaseRef = useRef(autoReleaseActive);
+
+      // J2 (V6.1): useLayoutEffect so the sweep flag is set in the same paint as the lens change
+      useLayoutEffect(() => {
+        if (prevAutoReleaseRef.current !== autoReleaseActive) {
+          prevAutoReleaseRef.current = autoReleaseActive;
+          setSweeping(true);
+          const timer = setTimeout(() => setSweeping(false), 700);
+          return () => clearTimeout(timer);
+        }
+      }, [autoReleaseActive]);
+
+      const occupiedCount = bays.filter(b => b.status === 'occupied' || b.status === 'occupied_by_squatter').length;
+      const yoursCount = bays.filter(b => b.status === 'reserved_unclaimed' || b.status === 'reserved_checked_in').length;
+      const ghostCount = bays.filter(b => b.status === 'ghost').length;
+      const physicalAvailableCount = bays.filter(b => b.status === 'available').length;
+      const hasConflictBay = bays.some(b => b.status === 'occupied_by_squatter');
+
+      const totalAvailable = autoReleaseActive ? physicalAvailableCount + ghostCount : physicalAvailableCount;
+      const ghostPercent = Math.round((ghostCount / 20) * 100);
+
+      const occupiedWidth = `${(occupiedCount / 20) * 100}%`;
+      const yoursWidth = `${(yoursCount / 20) * 100}%`;
+      const ghostWidth = `${(ghostCount / 20) * 100}%`;
+      const freeWidth = `${(physicalAvailableCount / 20) * 100}%`;
+
+      // H6: Dynamic Map Hint derived from booking status
+      const mapHint = (booking.status === 'none' || booking.status === 'released')
+        ? 'Tap B-08 to reserve'
+        : (booking.status === 'active' || booking.status === 'checked_in')
+          ? 'Your bay: B-08'
+          : 'Booking complete';
+
+      return (
+        <div className="space-y-4 animate-screen">
+          
+          {/* B1 & H8: Dashed-Outline Demo Lens Overlay Pill */}
+          <div className="rounded-2xl border-[1.5px] border-dashed border-slate-300 bg-slate-100/90 px-3 py-2 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 pl-1">
+              <span className="w-2 h-2 rounded-full bg-brandBlue"></span>
+              <span className="text-xs font-display font-bold uppercase tracking-[0.06em] text-slate-600">
+                DEMO LENS
+              </span>
+            </div>
+            <div className="flex gap-1.5">
+              <button
+                type="button"
+                onClick={() => dispatch({ type: 'SET_AUTO_RELEASE_LENS', value: false })}
+                className={`min-h-[44px] px-3.5 py-1.5 rounded-xl text-xs font-display font-bold transition-all tap-scale ${
+                  !autoReleaseActive ? 'bg-brandNavy text-white shadow-subtle' : 'bg-white/70 text-slate-600 hover:bg-white'
+                }`}
+              >
+                Today (Pilot)
+              </button>
+              <button
+                type="button"
+                onClick={() => dispatch({ type: 'SET_AUTO_RELEASE_LENS', value: true })}
+                className={`min-h-[44px] px-3.5 py-1.5 rounded-xl text-xs font-display font-bold transition-all tap-scale ${
+                  autoReleaseActive ? 'bg-brandEmerald text-white shadow-subtle' : 'bg-white/70 text-slate-600 hover:bg-white'
+                }`}
+              >
+                With Auto-Release
+              </button>
+            </div>
+          </div>
+
+          {/* B3: Hero Availability Card */}
+          <div className={`p-5 rounded-3xl border shadow-raised transition-all stagger-1 ${
+            autoReleaseActive
+              ? 'bg-emerald-50/90 border-emerald-200 text-emerald-950'
+              : 'bg-amber-50/90 border-amber-300/80 text-amber-950'
+          }`}>
+            <div className="flex items-center justify-between">
+              <span className={`text-xs font-display font-bold uppercase tracking-[0.06em] ${autoReleaseActive ? 'text-emerald-800' : 'text-amber-800'}`}>
+                MG Road Zone - Live
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/95 border border-slate-200 text-xs font-semibold text-slate-700 shadow-subtle">
+                <span className={`w-2 h-2 rounded-full ${autoReleaseActive ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
+                {autoReleaseActive ? 'Live inventory refreshed' : 'Stale Reservations'}
+              </span>
+            </div>
+
+            <div className="font-display text-[32px] leading-[36px] font-extrabold tracking-tight mt-2 tabular-nums">
+              {autoReleaseActive
+                ? `${totalAvailable} spots available`
+                : (physicalAvailableCount === 0 ? 'FULL' : `Almost full - ${physicalAvailableCount} left`)}
+            </div>
+
+            {/* Dynamic Segmented Capacity Bar */}
+            <div className="mt-4 space-y-2">
+              <div className="h-3.5 w-full bg-slate-200 rounded-full overflow-hidden flex gap-0.5 p-0.5">
+                {occupiedCount > 0 && (
+                  <div
+                    style={{ width: occupiedWidth }}
+                    className="bg-slate-600 first:rounded-l-full last:rounded-r-full h-full transition-all duration-300"
+                    title={`Occupied (${occupiedCount})`}
+                  ></div>
+                )}
+                {yoursCount > 0 && (
+                  <div
+                    style={{ width: yoursWidth }}
+                    className="bg-brandBlue first:rounded-l-full last:rounded-r-full h-full transition-all duration-300"
+                    title={`Yours (${yoursCount})`}
+                  ></div>
+                )}
+                {ghostCount > 0 && (
+                  <div
+                    style={{ width: ghostWidth }}
+                    className={`first:rounded-l-full last:rounded-r-full h-full transition-all duration-500 ${
+                      autoReleaseActive ? 'emerald-striped' : 'bg-amber-500'
+                    }`}
+                    title={autoReleaseActive ? `Auto-freed (${ghostCount})` : `Unclaimed (${ghostCount})`}
+                  ></div>
+                )}
+                {physicalAvailableCount > 0 && (
+                  <div
+                    style={{ width: freeWidth }}
+                    className="bg-brandEmerald first:rounded-l-full last:rounded-r-full h-full transition-all duration-300"
+                    title={`Free (${physicalAvailableCount})`}
+                  ></div>
+                )}
+              </div>
+
+              <div className="flex flex-wrap justify-between gap-x-2 gap-y-1 text-xs text-slate-700 font-semibold pt-0.5 tabular-nums">
+                <span>{occupiedCount} Occupied</span>
+                {yoursCount > 0 && <span className="text-brandBlue">{yoursCount} Yours</span>}
+                <span>
+                  {autoReleaseActive ? `${ghostCount} Auto-freed` : `${ghostCount} Unclaimed (${ghostPercent}%)`}
+                </span>
+                <span className="text-emerald-800">{physicalAvailableCount} Free</span>
+              </div>
+            </div>
+
+            {/* B3 & B7: Key informational line at 15px */}
+            <p className="text-[15px] leading-[22px] font-medium mt-3 text-slate-800">
+              {autoReleaseActive
+                ? 'Unclaimed reservations automatically return to live availability after 15 minutes.'
+                : `${ghostCount} bays (${ghostPercent}%) are reserved but empty. Nobody has checked in.`}
+            </p>
+
+            {/* H8: min-h-[44px] Expander Row */}
+            <div className="mt-3 pt-2 border-t border-slate-200/80">
+              <button
+                type="button"
+                onClick={() => setExplanationOpen(!explanationOpen)}
+                className="min-h-[44px] w-full flex items-center justify-between text-sm font-display font-bold text-brandBlue focus:outline-none"
+              >
+                <span>What changed with smart check-in?</span>
+                <div className={`w-4 h-4 transition-transform ${explanationOpen ? 'rotate-180' : ''}`}>
+                  <Icon.ChevronDown />
+                </div>
+              </button>
+
+              {explanationOpen && (
+                <div className="mt-1 text-sm text-slate-700 space-y-2 leading-relaxed bg-white/95 p-4 rounded-2xl border border-slate-200">
+                  <p>• <strong>Pilot problem:</strong> 40% of reservations resulted in no-shows, locking bays digitally while walk-ins were turned away.</p>
+                  <p>• <strong>Solution:</strong> A 15-minute GPS check-in releases unverified bays back to the public map automatically.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* B2: Top-Down Parking Lot Map with Asphalt Texture, Painted Dividers & Gate Markers */}
+          <div className="asphalt-surface p-5 rounded-3xl border-2 border-slate-700/90 text-white shadow-raised space-y-4 stagger-2">
+            <SectionHeader
+              dark={true}
+              icon={<Icon.Pin />}
+              title="Lot Map (20 Bays)"
+              rightContent={
+                <span className="px-2.5 py-1 rounded-full bg-slate-800 border border-slate-700 text-xs text-emerald-400 font-semibold">
+                  {mapHint}
+                </span>
+              }
+            />
+
+            <div className="p-2.5 rounded-2xl bg-slate-950/75 border border-slate-800 space-y-2.5">
+              {/* Row 1: B-01 to B-10 with Painted Stall Dividers */}
+              <div className="grid grid-cols-5 gap-1.5 pb-1 border-b border-dashed border-slate-800">
+                {bays.slice(0, 10).map((bay, idx) => (
+                  <BayMapButton
+                    key={bay.id}
+                    bay={bay}
+                    index={idx}
+                    autoReleaseActive={autoReleaseActive}
+                    sweeping={sweeping}
+                    booking={booking}
+                    dispatch={dispatch}
+                  />
+                ))}
+              </div>
+
+              {/* Driving Aisle with Gate Pillars & Fading Chevrons */}
+              <div className="h-9 bg-slate-900/95 rounded-xl border border-slate-800 flex items-center justify-between px-2 text-xs font-display font-bold text-slate-300 relative">
+                {/* IN Gate Marker */}
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-600 text-emerald-400 shadow-subtle">
+                  <span className="w-1.5 h-3.5 rounded-sm bg-emerald-400"></span>
+                  <span>IN</span>
+                </div>
+
+                {/* Lane Centerline & Chevrons */}
+                <div className="flex items-center gap-3">
+                  <span className="w-4 h-0.5 bg-slate-700 rounded-full"></span>
+                  <svg className="w-4 h-3 fill-current text-slate-500 opacity-40" viewBox="0 0 24 24"><path d="M5 3l9 9-9 9 2 2 11-11L7 1z"/></svg>
+                  <svg className="w-4 h-3 fill-current text-slate-400 opacity-70" viewBox="0 0 24 24"><path d="M5 3l9 9-9 9 2 2 11-11L7 1z"/></svg>
+                  <svg className="w-4 h-3 fill-current text-slate-300 opacity-100" viewBox="0 0 24 24"><path d="M5 3l9 9-9 9 2 2 11-11L7 1z"/></svg>
+                  <span className="w-4 h-0.5 bg-slate-700 rounded-full"></span>
+                </div>
+
+                {/* OUT Gate Marker */}
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-600 text-slate-300 shadow-subtle">
+                  <span>OUT</span>
+                  <span className="w-1.5 h-3.5 rounded-sm bg-amber-400"></span>
+                </div>
+              </div>
+
+              {/* Row 2: B-11 to B-20 with Painted Stall Dividers */}
+              <div className="grid grid-cols-5 gap-1.5 pt-1 border-t border-dashed border-slate-800">
+                {bays.slice(10, 20).map((bay, idx) => (
+                  <BayMapButton
+                    key={bay.id}
+                    bay={bay}
+                    index={idx + 10}
+                    autoReleaseActive={autoReleaseActive}
+                    sweeping={sweeping}
+                    booking={booking}
+                    dispatch={dispatch}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* J3: Legend Chips with conditional Conflict chip */}
+            <div className="flex flex-wrap gap-1.5 pt-1 text-xs text-slate-300 font-medium">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800/90 border border-slate-700">
+                <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500"></span>
+                <span>Available</span>
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800/90 border border-slate-700">
+                <span className="w-2.5 h-2.5 rounded-sm bg-slate-500"></span>
+                <span>Taken</span>
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800/90 border border-slate-700">
+                <span className="w-2.5 h-2.5 rounded-sm bg-amber-500"></span>
+                <span>No-show</span>
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800/90 border border-slate-700">
+                <span className="w-2.5 h-2.5 rounded-sm bg-blue-500"></span>
+                <span>Yours</span>
+              </span>
+              {hasConflictBay && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800/90 border border-slate-700">
+                  <span className="w-2.5 h-2.5 rounded-sm bg-rose-500"></span>
+                  <span>Conflict</span>
+                </span>
+              )}
+            </div>
+          </div>
+
+        </div>
+      );
+    }
+
+    // J2 & B2: 72px Bay Map Tile with sweeping-scoped stagger delay
+    function BayMapButton({ bay, index, autoReleaseActive, sweeping, booking, dispatch }) {
+      const isB08 = bay.id === 'B-08';
+      const isB14 = bay.id === 'B-14';
+      const isGhost = bay.status === 'ghost';
+      const isOccupied = bay.status === 'occupied';
+      const isSquatter = bay.status === 'occupied_by_squatter';
+      const isAvailable = bay.status === 'available';
+      const isReservedUnclaimed = bay.status === 'reserved_unclaimed';
+      const isReservedCheckedIn = bay.status === 'reserved_checked_in';
+
+      // B2: Deterministic neutral car tints based on bay number
+      const bayNum = parseInt(bay.id.slice(2), 10) || 1;
+      const carTints = ['text-slate-400', 'text-zinc-300', 'text-slate-300', 'text-stone-400'];
+      const carTintClass = carTints[bayNum % carTints.length];
+
+      let bg = 'bg-slate-900/95 border-slate-700/90 text-slate-300';
+      let label = 'Taken';
+      let icon = <div className={`w-7 h-7 ${carTintClass}`}><Icon.CarTop /></div>;
+
+      if (isOccupied) {
+        bg = 'bg-slate-900/95 border-slate-700/90 text-slate-300';
+        label = 'Taken';
+        icon = <div className={`w-7 h-7 ${carTintClass}`}><Icon.CarTop /></div>;
+      } else if (isSquatter) {
+        bg = 'bg-rose-950/90 border-rose-500 text-rose-200';
+        label = 'Conflict';
+        icon = (
+          <div className="relative w-7 h-7 text-rose-400">
+            <Icon.CarTop />
+            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-rose-500 border border-slate-950 animate-pulse"></span>
+          </div>
+        );
+      } else if (isGhost) {
+        if (!autoReleaseActive) {
+          bg = 'amber-hatched border-amber-500/90 text-amber-200';
+          label = 'No-show';
+          icon = <div className="w-5 h-5 text-amber-400"><Icon.Hourglass /></div>;
+        } else {
+          bg = 'bg-emerald-950/90 border-emerald-500 text-emerald-200';
+          label = 'Freed';
+          icon = <span className="font-display font-extrabold text-base text-emerald-400">P</span>;
+        }
+      } else if (isAvailable) {
+        bg = 'bg-emerald-950/90 border-emerald-500 text-emerald-200';
+        label = 'Free';
+        icon = <span className="font-display font-extrabold text-base text-emerald-400">P</span>;
+      }
+
+      if (isB08) {
+        if (isReservedUnclaimed) {
+          bg = 'bg-blue-950 border-blue-400 text-blue-100 ring-2 ring-blue-400 bay-glow-blue animate-pulse-ring';
+          label = 'Yours';
+          icon = <div className="w-5 h-5 text-blue-300"><Icon.Clock /></div>;
+        } else if (isReservedCheckedIn) {
+          bg = 'bg-blue-900 border-emerald-400 text-blue-100 ring-2 ring-emerald-500 bay-glow-emerald';
+          label = 'Checked in';
+          icon = <div className="w-5 h-5 text-emerald-300"><Icon.Check /></div>;
+        } else if (booking.status === 'none' || booking.status === 'released') {
+          bg = 'bg-blue-950 border-blue-400 text-blue-100 ring-2 ring-blue-500 bay-glow-blue animate-pulse-ring';
+          label = 'Select';
+          icon = <span className="font-display font-extrabold text-base text-blue-300">P</span>;
+        }
+      }
+
+      if (isB14 && isReservedCheckedIn) {
+        bg = 'bg-blue-900 border-emerald-400 text-blue-100 ring-2 ring-emerald-500 bay-glow-emerald';
+        label = 'Reassigned';
+        icon = <div className="w-5 h-5 text-emerald-300"><Icon.Navigation /></div>;
+      }
+
+      const handleClick = () => {
+        if (isB08 && (booking.status === 'none' || booking.status === 'released')) {
+          dispatch({ type: 'CONFIRM_RESERVATION' });
+        } else if (isGhost) {
+          if (autoReleaseActive) {
+            dispatch({
+              type: 'SHOW_TOAST',
+              message: `${bay.id}: Auto-freed after the 15-minute grace window.`,
+              toastType: 'success',
+              target: 'driver'
+            });
+          } else {
+            dispatch({
+              type: 'SHOW_TOAST',
+              message: `${bay.id}: Unclaimed reservation without check-in.`,
+              toastType: 'warning',
+              target: 'driver'
+            });
+          }
+        } else if (isOccupied || isSquatter) {
+          dispatch({
+            type: 'SHOW_TOAST',
+            message: `${bay.id}: Occupied by parked vehicle.`,
+            toastType: 'info',
+            target: 'driver'
+          });
+        } else {
+          dispatch({
+            type: 'SHOW_TOAST',
+            message: `${bay.id}: Available bay.`,
+            toastType: 'success',
+            target: 'driver'
+          });
+        }
+      };
+
+      // J2: Apply 30ms stagger delay ONLY while a lens sweep is actively running
+      const staggerStyle = (sweeping && isGhost) ? { transitionDelay: `${index * 30}ms` } : undefined;
+
+      return (
+        <button
+          type="button"
+          onClick={handleClick}
+          style={staggerStyle}
+          className={`h-[72px] rounded-xl border-x border-t-2 border-b flex flex-col items-center justify-between py-1.5 px-0.5 tap-scale transition-all duration-300 select-none focus:outline-none focus:ring-2 focus:ring-brandBlue ${bg}`}
+          aria-label={`Parking bay ${bay.id}, status: ${label}`}
+        >
+          <span className="font-display text-xs font-bold leading-none tabular-nums">{bay.id}</span>
+          <div className="flex items-center justify-center my-auto">{icon}</div>
+          <span className="text-xs font-semibold tracking-tight truncate max-w-full leading-none">{label}</span>
+        </button>
+      );
+    }
+
+    // =========================================================================
+    // SCREEN S1: BOOKING CONFIRMATION PASS (J1 USES MODULE-SCOPED HALOICON)
+    // =========================================================================
+    function ScreenS1Pass({ state }) {
+      const [policiesOpen, setPoliciesOpen] = useState(false);
+
+      return (
+        <div className="space-y-4 animate-screen">
+          
+          <div className="text-center pt-1 pb-1 stagger-1">
+            <HaloIcon tone="emerald" size="lg" className="mb-2">
+              <Icon.CheckAnimated />
+            </HaloIcon>
+            <h2 className="font-display text-[24px] leading-[30px] font-bold text-brandNavy tracking-tight">Parking Pass Active</h2>
+            <p className="text-[15px] leading-[22px] font-medium text-inkMuted mt-0.5 tabular-nums">Payment of ₹120 debited from wallet</p>
+          </div>
+
+          {/* Ticket Pass with Centered Divider Notches */}
+          <div className="bg-white rounded-3xl border border-borderSubtle shadow-raised overflow-hidden stagger-2">
+            <div className="p-5 pb-4 flex justify-between items-start">
+              <div>
+                <span className="text-xs font-display font-bold text-slate-400 uppercase tracking-[0.06em]">Reserved Bay</span>
+                <div className="font-display text-[32px] leading-[36px] font-extrabold text-inkPrimary mt-1 tabular-nums">Spot B-08</div>
+                <p className="text-sm text-inkMuted font-medium mt-1">MG Road Zone • Ground Floor</p>
+              </div>
+
+              <div className="text-right">
+                <span className="text-xs font-display font-bold text-slate-400 uppercase tracking-[0.06em]">Arrival By</span>
+                <div className="font-display text-xl font-extrabold text-amber-600 mt-1 tabular-nums">9:15 AM</div>
+                <span className="text-xs font-semibold text-slate-500">15-min window</span>
+              </div>
+            </div>
+
+            <div className="relative flex items-center justify-center my-1">
+              <div className="w-5 h-5 rounded-full bg-surfaceBg border border-borderSubtle -ml-2.5 shrink-0"></div>
+              <div className="flex-1 border-t-2 border-dashed border-slate-200 mx-2"></div>
+              <div className="w-5 h-5 rounded-full bg-surfaceBg border border-borderSubtle -mr-2.5 shrink-0"></div>
+            </div>
+
+            <div className="p-5 pt-4 space-y-3.5">
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-sm text-slate-700 leading-relaxed flex items-start gap-2.5">
+                <div className="w-5 h-5 text-brandBlue shrink-0 mt-0.5"><Icon.Info /></div>
+                <p>
+                  <strong>Arrival rule:</strong> Please confirm arrival via GPS check-in by 9:15 AM. Unclaimed spots return to live inventory to keep parking reliable for everyone.
+                </p>
+              </div>
+
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setPoliciesOpen(!policiesOpen)}
+                  className="min-h-[44px] w-full flex items-center justify-between text-sm font-display font-bold text-slate-600 hover:text-slate-900"
+                >
+                  <span>View cancellation & refund terms</span>
+                  <div className={`w-4 h-4 transition-transform ${policiesOpen ? 'rotate-180' : ''}`}>
+                    <Icon.ChevronDown />
+                  </div>
+                </button>
+
+                {policiesOpen && (
+                  <div className="mt-2 text-sm text-slate-600 space-y-2 bg-slate-50 p-4 rounded-2xl border border-slate-200 leading-relaxed">
+                    <p>• <strong>Free cancellation:</strong> Cancel up to 15 minutes before booking start without charge.</p>
+                    <p>• <strong>First no-show fee waived:</strong> If you miss arrival, 100% (₹120) is credited back to your wallet.</p>
+                    <p>• <strong>Subsequent no-shows:</strong> Standard policy returns 75% (₹90) as wallet credit and retains a 25% fee (₹30).</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      );
+    }
+
+    // =========================================================================
+    // SCREEN S2: ACTIVE BOOKING & COUNTDOWN (H4 DYNAMIC DEADLINE LABEL)
+    // =========================================================================
+    function ScreenS2ActiveBooking({ state, dispatch, formatMmSs }) {
+      const { booking, nearZone } = state;
+      const { secondsRemaining, extensionApplied, arrivalDeadline } = booking;
+
+      // H4: Dynamic arrival deadline label updates to 9:25 AM when +10 min buffer is applied
+      const deadlineLabel = extensionApplied ? '9:25 AM' : arrivalDeadline;
+
+      const totalWindow = extensionApplied ? 1500 : 900;
+      const radius = 76;
+      const circumference = 2 * Math.PI * radius;
+      const progress = Math.max(0, Math.min(1, secondsRemaining / totalWindow));
+      const strokeOffset = circumference - (progress * circumference);
+
+      let strokeColor = '#059669';
+      if (secondsRemaining <= 120) strokeColor = '#E11D48';
+      else if (secondsRemaining <= 300) strokeColor = '#D97706';
+
+      return (
+        <div className="space-y-4 animate-screen">
+          
+          <div className="bg-white rounded-3xl border border-borderSubtle shadow-raised p-5 flex flex-col items-center text-center stagger-1">
+            <div className="flex justify-between items-center w-full mb-2">
+              <span className="px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-display font-bold tabular-nums">
+                Arrive by {deadlineLabel}
+              </span>
+              <span className="px-3 py-1 rounded-full bg-blue-50 text-brandBlue text-xs font-display font-extrabold tabular-nums">
+                Bay B-08
+              </span>
+            </div>
+
+            {/* 176px Countdown Ring with 40px Numeral */}
+            <div className="relative w-44 h-44 my-2 flex items-center justify-center">
+              <svg className="w-full h-full -rotate-90" viewBox="0 0 176 176">
+                <circle
+                  cx="88"
+                  cy="88"
+                  r={radius}
+                  className="stroke-slate-100"
+                  strokeWidth="10"
+                  fill="transparent"
+                />
+                <circle
+                  cx="88"
+                  cy="88"
+                  r={radius}
+                  stroke={strokeColor}
+                  strokeWidth="10"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={strokeOffset}
+                  strokeLinecap="round"
+                  fill="transparent"
+                  className="transition-all duration-700 ease-out"
+                />
+              </svg>
+
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="font-display text-[40px] leading-[44px] font-extrabold tracking-tight text-inkPrimary tabular-nums">
+                  {formatMmSs(secondsRemaining)}
+                </span>
+                <span className="text-xs font-semibold text-slate-500 mt-1">
+                  left to check in
+                </span>
+              </div>
+            </div>
+
+            {/* Distance Track & Location Status */}
+            <div className="w-full pt-3 border-t border-slate-100 space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <span className={`w-2.5 h-2.5 rounded-full ${nearZone ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}></span>
+                  <span className="font-bold text-slate-700">
+                    {nearZone ? 'You’re at the zone — check in now' : 'You’re 320 m away from zone'}
+                  </span>
+                </div>
+                <span className="text-slate-500 font-semibold text-xs tabular-nums">
+                  {nearZone ? '40 m' : '320 m'}
+                </span>
+              </div>
+
+              <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className={`h-full transition-all duration-500 ${nearZone ? 'w-full bg-brandEmerald' : 'w-1/4 bg-slate-400'}`}
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-center stagger-2">
+            <Btn
+              variant="tertiary"
+              onClick={() => dispatch({ type: 'OPEN_MODAL', modal: 'cancel_pass' })}
+            >
+              Cancel booking
+            </Btn>
+          </div>
+
+        </div>
+      );
+    }
+
+    // =========================================================================
+    // SCREEN S3: OUTCOME (J1 USES MODULE-SCOPED HALOICON)
+    // =========================================================================
+    function ScreenS3Outcome({ state }) {
+      const { booking } = state;
+      const { status, lastReleaseWaived } = booking;
+
+      // B4: Completed Session State with Receipt Summary
+      if (status === 'completed') {
+        const parkedBay = booking.reassignedBay || booking.bay;
+        return (
+          <div className="bg-white rounded-3xl border border-borderSubtle shadow-raised p-5 text-center space-y-4 animate-screen">
+            <HaloIcon tone="emerald"><Icon.CheckAnimated /></HaloIcon>
+            <div>
+              <h2 className="font-display text-[24px] leading-[30px] font-bold text-brandNavy tracking-tight">
+                Parking session active until 11:00 AM
+              </h2>
+              <p className="text-sm font-medium text-inkMuted mt-1">
+                Your vehicle is parked in <strong>{parkedBay}</strong> at MG Road Zone.
+              </p>
+            </div>
+            <div className="bg-slate-50 rounded-2xl border border-slate-200 p-4 text-sm space-y-2.5 text-left">
+              <div className="flex justify-between text-slate-600">
+                <span>Bay</span>
+                <span className="font-display font-bold text-slate-900 tabular-nums">{parkedBay}</span>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Slot</span>
+                <span className="font-semibold text-slate-900 tabular-nums">{booking.slot}</span>
+              </div>
+              <div className="pt-2 border-t border-slate-200 flex justify-between font-display font-extrabold text-slate-900">
+                <span>Paid</span>
+                <span className="text-emerald-600 tabular-nums">₹{booking.amountPaid}</span>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // B4: Transferred State with Receipt Summary
+      if (status === 'transferred') {
+        return (
+          <div className="bg-white rounded-3xl border border-borderSubtle shadow-raised p-5 text-center space-y-4 animate-screen">
+            <HaloIcon tone="blue"><Icon.Navigation /></HaloIcon>
+            <div>
+              <h2 className="font-display text-[24px] leading-[30px] font-bold text-brandNavy tracking-tight">
+                Transferred to Brigade Rd Zone, Bay A-04, 400 m
+              </h2>
+              <p className="text-sm font-medium text-inkMuted mt-1">
+                Your reservation has been seamlessly moved with zero extra charges.
+              </p>
+            </div>
+            <div className="bg-slate-50 rounded-2xl border border-slate-200 p-4 text-sm space-y-2.5 text-left">
+              <div className="flex justify-between text-slate-600">
+                <span>Zone</span>
+                <span className="font-semibold text-slate-900">Brigade Rd</span>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Bay</span>
+                <span className="font-display font-bold text-slate-900 tabular-nums">A-04</span>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Distance</span>
+                <span className="font-semibold text-slate-900 tabular-nums">400 m</span>
+              </div>
+              <div className="pt-2 border-t border-slate-200 flex justify-between font-display font-extrabold text-slate-900">
+                <span>Extra charge</span>
+                <span className="text-emerald-600 tabular-nums">₹0</span>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // B4: Refunded State with Receipt Summary
+      if (status === 'refunded') {
+        return (
+          <div className="bg-white rounded-3xl border border-borderSubtle shadow-raised p-5 text-center space-y-4 animate-screen">
+            <HaloIcon tone="emerald"><Icon.CheckAnimated /></HaloIcon>
+            <div>
+              <h2 className="font-display text-[24px] leading-[30px] font-bold text-brandNavy tracking-tight tabular-nums">
+                ₹170 credited to wallet
+              </h2>
+              <p className="text-sm font-medium text-inkMuted mt-1">
+                Full pass refund (₹120) plus an inconvenience credit (₹50) is now available in your SwiftPark wallet.
+              </p>
+            </div>
+            <div className="bg-slate-50 rounded-2xl border border-slate-200 p-4 text-sm space-y-2.5 text-left">
+              <div className="flex justify-between text-slate-600">
+                <span>Pass refund</span>
+                <span className="font-bold text-slate-900 tabular-nums">₹120</span>
+              </div>
+              <div className="flex justify-between text-emerald-700 font-semibold">
+                <span>Apology credit</span>
+                <span className="tabular-nums">₹50</span>
+              </div>
+              <div className="pt-2 border-t border-slate-200 flex justify-between font-display font-extrabold text-slate-900">
+                <span>Total credited</span>
+                <span className="text-emerald-600 tabular-nums">₹170</span>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // B4: Checked-In State with Receipt Summary
+      if (status === 'checked_in') {
+        return (
+          <div className="bg-white rounded-3xl border border-borderSubtle shadow-raised p-5 text-center space-y-4 animate-screen">
+            <HaloIcon tone="emerald"><Icon.CheckAnimated /></HaloIcon>
+            <div>
+              <h2 className="font-display text-[24px] leading-[30px] font-bold text-brandNavy tracking-tight">
+                You’re checked in — confirmed by GPS
+              </h2>
+              <p className="text-sm font-medium text-inkMuted mt-1">
+                Bay B-08 is secured for your vehicle until 11:00 AM.
+              </p>
+            </div>
+            <div className="bg-slate-50 rounded-2xl border border-slate-200 p-4 text-sm space-y-2.5 text-left">
+              <div className="flex justify-between text-slate-600">
+                <span>Bay</span>
+                <span className="font-display font-bold text-slate-900 tabular-nums">{booking.bay}</span>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Valid until</span>
+                <span className="font-semibold text-slate-900 tabular-nums">11:00 AM</span>
+              </div>
+              <div className="pt-2 border-t border-slate-200 flex justify-between font-display font-extrabold text-slate-900">
+                <span>Verified by</span>
+                <span className="text-emerald-600">GPS</span>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // Released / No-Show State
+      return (
+        <div className="bg-white rounded-3xl border border-borderSubtle shadow-raised p-5 text-center space-y-4 animate-screen">
+          <HaloIcon tone="neutral"><Icon.Clock /></HaloIcon>
+
+          <div>
+            <h2 className="font-display text-[24px] leading-[30px] font-bold text-brandNavy tracking-tight">Booking released</h2>
+            <p className="text-sm font-medium text-inkMuted mt-1">
+              Arrival window elapsed. Bay B-08 has returned to live availability for other drivers.
+            </p>
+          </div>
+
+          <div className="bg-slate-50 rounded-2xl border border-slate-200 p-4 text-sm space-y-2.5 text-left">
+            <div className="flex justify-between text-slate-600">
+              <span>Paid for pass:</span>
+              <span className="font-bold text-slate-900 tabular-nums">₹120</span>
+            </div>
+            {lastReleaseWaived ? (
+              <div className="flex justify-between text-emerald-700 font-semibold">
+                <span>First no-show fee:</span>
+                <span>Waived (₹0 fee)</span>
+              </div>
+            ) : (
+              <div className="flex justify-between text-amber-700 font-semibold">
+                <span>No-show retention (25%):</span>
+                <span className="tabular-nums">-₹30</span>
+              </div>
+            )}
+            <div className="pt-2 border-t border-slate-200 flex justify-between font-display font-extrabold text-slate-900">
+              <span>Credited to wallet:</span>
+              <span className="text-emerald-600 tabular-nums">{lastReleaseWaived ? '+₹120' : '+₹90'}</span>
+            </div>
+          </div>
+
+          <p className="text-sm text-slate-600 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+            {lastReleaseWaived
+              ? 'From your next no-show, a 25% fee (₹30) applies.'
+              : 'Standard 25% no-show fee was applied to this release.'}
+          </p>
+        </div>
+      );
+    }
+
+    // =========================================================================
+    // SCREEN S4: AT BOOKED BAY
+    // =========================================================================
+    function ScreenS4AtBay({ state }) {
+      const { squatterPresent } = state;
+
+      return (
+        <div className="space-y-4 animate-screen">
+          
+          <div className="bg-white p-5 rounded-3xl border border-borderSubtle shadow-raised flex items-center justify-between stagger-1">
+            <div>
+              <span className="text-xs font-display font-bold text-slate-400 uppercase tracking-[0.06em]">At Destination</span>
+              <h2 className="font-display text-[24px] leading-[30px] font-bold text-brandNavy mt-0.5">Spot B-08</h2>
+              <p className="text-sm text-inkMuted font-medium">MG Road Zone • Ground Floor</p>
+            </div>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-display font-bold text-emerald-800">
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span>GPS Verified</span>
+            </span>
+          </div>
+
+          {/* Top-Down Bay Visual with SVG Hatchback */}
+          <div className="asphalt-surface rounded-3xl p-5 border border-slate-800 text-white text-center space-y-3.5 shadow-raised stagger-2">
+            <div className="h-52 bg-slate-950/90 rounded-2xl border-2 border-dashed border-slate-700 relative flex items-center justify-center p-4">
+              <span className="absolute top-2.5 left-3.5 text-xs font-display font-bold text-slate-400 tabular-nums">BAY B-08</span>
+
+              {squatterPresent ? (
+                <div className="flex flex-col items-center">
+                  <svg className="w-28 h-36 drop-shadow-xl" viewBox="0 0 120 160" aria-label="Unauthorized white hatchback">
+                    <rect x="14" y="48" width="8" height="14" rx="3" fill="#CBD5E1" />
+                    <rect x="98" y="48" width="8" height="14" rx="3" fill="#CBD5E1" />
+                    <rect x="20" y="12" width="80" height="136" rx="24" fill="#F8FAFC" stroke="#94A3B8" strokeWidth="3" />
+                    <path d="M 30 42 Q 60 32 90 42 L 85 68 Q 60 62 35 68 Z" fill="#1E293B" />
+                    <rect x="34" y="70" width="52" height="38" rx="6" fill="#E2E8F0" />
+                    <path d="M 33 128 Q 60 135 87 128 L 84 112 Q 60 116 36 112 Z" fill="#1E293B" />
+                    <rect x="28" y="14" width="14" height="5" rx="2" fill="#FDE047" />
+                    <rect x="78" y="14" width="14" height="5" rx="2" fill="#FDE047" />
+                    <rect x="28" y="141" width="14" height="5" rx="2" fill="#F43F5E" />
+                    <rect x="78" y="141" width="14" height="5" rx="2" fill="#F43F5E" />
+                  </svg>
+                  <div className="mt-1.5 inline-flex items-center gap-2 px-3 py-0.5 rounded-md bg-white text-slate-900 border border-slate-300 text-xs font-display font-bold tabular-nums shadow-sm">
+                    <span>KA-01-4021</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center text-slate-400 text-sm space-y-2">
+                  <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center mx-auto">
+                    <div className="w-6 h-6"><Icon.Check /></div>
+                  </div>
+                  <span className="font-semibold text-emerald-400 block">Bay is clear and ready</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between text-sm px-1">
+              <span className="text-slate-300 font-medium">IoT Ground Sensor:</span>
+              <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full ${
+                squatterPresent ? 'bg-rose-950 text-rose-200 border border-rose-800' : 'bg-emerald-950 text-emerald-200 border border-emerald-800'
+              }`}>
+                <span className={`w-2 h-2 rounded-full ${squatterPresent ? 'bg-rose-500 animate-pulse' : 'bg-emerald-400'}`}></span>
+                <span>{squatterPresent ? 'Bay Occupied' : 'Bay Vacant'}</span>
+              </span>
+            </div>
+          </div>
+
+        </div>
+      );
+    }
+
+    // =========================================================================
+    // SCREEN S6: CONFLICT RESOLUTION (J1 USES MODULE-SCOPED HALOICON)
+    // =========================================================================
+    function ScreenS6Resolution({ state }) {
+      const { booking, navigatingActive } = state;
+      const isReassigned = booking.conflictResult === 'reassigned';
+
+      return (
+        <div className="space-y-4 animate-screen">
+          {isReassigned ? (
+            <div className="space-y-4">
+              
+              <div className="bg-white rounded-3xl border border-borderSubtle shadow-raised p-5 text-center space-y-1.5 stagger-1">
+                <HaloIcon tone="emerald" size="md" className="mb-1">
+                  <Icon.CheckAnimated />
+                </HaloIcon>
+                <h2 className="font-display text-xl font-extrabold text-brandNavy tracking-tight">We’ve secured a new spot for you</h2>
+                <p className="text-sm text-inkMuted font-medium">Outcome in under 90 seconds</p>
+              </div>
+
+              {/* New Bay Card */}
+              <div className="bg-gradient-to-br from-brandNavy to-slate-900 rounded-3xl p-5 text-white shadow-floating space-y-2.5 stagger-2">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-xs font-display font-bold text-blue-300 uppercase tracking-[0.06em]">New Allocated Bay</span>
+                    <div className="font-display text-[32px] leading-[36px] font-extrabold mt-0.5 tabular-nums">New spot B-14</div>
+                  </div>
+                  <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 px-2.5 py-1 rounded-full text-xs font-bold">
+                    Sensor-verified free
+                  </span>
+                </div>
+                
+                <div className="pt-2 text-sm text-slate-300 flex items-center gap-2 border-t border-slate-800 font-medium">
+                  <span>65 m walk</span>
+                  <span>·</span>
+                  <span>~1 min ahead</span>
+                  <span>·</span>
+                  <span className="text-emerald-400 font-bold">No extra charge</span>
+                </div>
+              </div>
+
+              {/* B6: Route Card with From B-08 -> To B-14 Chip Row */}
+              <div className="asphalt-surface rounded-3xl p-5 border border-slate-800 text-white space-y-3.5 shadow-raised stagger-3">
+                <div className="flex items-center justify-between gap-2">
+                  {/* B6: From B-08 -> To B-14 Chip Row using inline SVG arrow */}
+                  <div className="flex items-center gap-1.5 text-xs font-display font-bold tabular-nums">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-950/90 border border-rose-700 text-rose-200">
+                      <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                      <span>From B-08</span>
+                    </span>
+                    <span className="w-4 h-4 text-slate-400 shrink-0"><Icon.ArrowRight /></span>
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950/90 border border-emerald-700 text-emerald-200">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                      <span>To B-14</span>
+                    </span>
+                  </div>
+
+                  <span className="px-2.5 py-1 rounded-full bg-blue-950 border border-blue-700 text-xs text-blue-300 font-display font-bold tabular-nums shrink-0">
+                    ETA ~1 min
+                  </span>
+                </div>
+
+                <div className="h-28 bg-slate-950 rounded-2xl relative overflow-hidden flex items-center justify-center border border-slate-800">
+                  <svg className="w-full h-full" viewBox="0 0 300 96" aria-label="Curved route from Bay B-08 to Bay B-14">
+                    <path
+                      d="M 48 68 Q 150 20 252 54"
+                      fill="none"
+                      stroke="#1E293B"
+                      strokeWidth="6"
+                      strokeLinecap="round"
+                    />
+                    <path
+                      d="M 48 68 Q 150 20 252 54"
+                      fill="none"
+                      stroke="#2563EB"
+                      strokeWidth="4"
+                      strokeDasharray="7 6"
+                      strokeLinecap="round"
+                      className="animate-route"
+                    />
+
+                    <circle cx="48" cy="68" r="16" fill="#E11D48" />
+                    <text x="48" y="72" fill="#FFFFFF" fontSize="12" fontWeight="bold" textAnchor="middle">B-08</text>
+
+                    <circle cx="252" cy="54" r="18" fill="#059669" />
+                    <text x="252" y="58" fill="#FFFFFF" fontSize="12" fontWeight="bold" textAnchor="middle">B-14</text>
+
+                    {navigatingActive && (
+                      <g className="animate-car-path">
+                        <circle cx="54" cy="66" r="9" fill="#38BDF8" stroke="#0F172A" strokeWidth="2" />
+                        <circle cx="54" cy="66" r="4" fill="#FFFFFF" />
+                      </g>
+                    )}
+                  </svg>
+                </div>
+
+                {navigatingActive ? (
+                  <div className="px-3.5 py-2.5 rounded-2xl bg-emerald-950/90 border border-emerald-600/60 flex items-center justify-between text-xs text-emerald-200 font-semibold">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 text-emerald-400 shrink-0"><Icon.Navigation /></div>
+                      <span>Turn-by-turn active: Proceed 65 m along aisle to B-14</span>
+                    </div>
+                    <span className="font-display font-bold text-emerald-400 tabular-nums shrink-0">~1 min</span>
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-300 text-center">
+                    Warden notified of unauthorized vehicle at B-08 for physical enforcement.
+                  </p>
+                )}
+              </div>
+
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="bg-amber-50 rounded-3xl border border-amber-300 p-6 text-center shadow-raised space-y-2.5 stagger-1">
+                <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center mx-auto">
+                  <div className="w-6 h-6"><Icon.AlertTriangle /></div>
+                </div>
+                <h2 className="font-display text-lg font-extrabold text-amber-950 leading-snug">
+                  No sensor-verified free bay nearby
+                </h2>
+                <p className="text-[15px] leading-[22px] font-medium text-amber-900">
+                  No bay at MG Road could be sensor-verified as free right now. We guarantee an immediate resolution in under 90 seconds:
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // =========================================================================
+    // SCREEN: WALLET TAB & LEDGER
+    // =========================================================================
+    function ScreenWalletView({ state, animatedBalance }) {
+      return (
+        <div className="space-y-4 animate-screen">
+          
+          <div className="bg-gradient-to-br from-brandNavy via-slate-900 to-blue-900 p-6 rounded-3xl text-white shadow-floating space-y-1 relative overflow-hidden stagger-1">
+            <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-blue-500/15 pointer-events-none"></div>
+            <span className="text-xs font-display font-bold uppercase tracking-[0.06em] text-blue-300">SwiftPark Wallet</span>
+            <div className="font-display text-[32px] leading-[36px] font-extrabold tracking-tight tabular-nums mt-1">
+              ₹{animatedBalance}.00
+            </div>
+            <p className="text-sm text-slate-300 pt-1">Automated credits for releases, waivers, and resolutions</p>
+          </div>
+
+          <div className="bg-white rounded-3xl border border-borderSubtle p-5 shadow-raised space-y-3.5 stagger-2">
+            <SectionHeader icon={<Icon.Wallet />} title="Transaction History" />
+
+            <div className="space-y-2.5">
+              {state.walletLedger.map(item => {
+                const isCredit = item.type === 'credit';
+                return (
+                  <div key={item.id} className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between gap-3 text-sm">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
+                        isCredit ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-700'
+                      }`}>
+                        <div className="w-4 h-4">
+                          {isCredit ? <Icon.ArrowDownLeft /> : <Icon.ArrowUpRight />}
+                        </div>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-semibold text-slate-800 truncate">{item.title}</div>
+                        <div className="text-xs text-slate-500 mt-0.5">{item.time}</div>
+                      </div>
+                    </div>
+                    <span className={`font-display font-bold text-sm tabular-nums shrink-0 ${isCredit ? 'text-emerald-600' : 'text-slate-800'}`}>
+                      {isCredit ? `+₹${item.amount}` : `-₹${item.amount}`}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+        </div>
+      );
+    }
+
+    // =========================================================================
+    // DRIVER MODAL & BOTTOM SHEETS (B5 3-STEP SEARCH SEQUENCE)
+    // =========================================================================
+    function DriverModalManager({ state, dispatch }) {
+      const { activeModal, lookupStep, booking } = state;
+      const [localPlate, setLocalPlate] = useState(booking.enteredPlate || '4021');
+
+      if (!activeModal) return null;
+
+      const lookupMessages = [
+        'Checking nearby availability...',
+        'Verifying sensor signal...',
+        'Securing your alternative...'
+      ];
+
+      return (
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end justify-center">
+          <div className="w-full bg-white rounded-t-3xl border-t border-borderSubtle p-6 shadow-floating animate-sheet space-y-4">
+            <div className="w-10 h-1 bg-slate-300 rounded-full mx-auto"></div>
+
+            {/* MODAL: CANCEL ACTIVE PASS */}
+            {activeModal === 'cancel_pass' && (
+              <div className="space-y-4 text-center">
+                <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center mx-auto">
+                  <div className="w-6 h-6"><Icon.Info /></div>
+                </div>
+                <div>
+                  <h3 className="font-display text-lg font-bold text-brandNavy">Cancel Parking Pass?</h3>
+                  <p className="text-[15px] leading-[22px] text-inkMuted mt-1 px-2">
+                    {booking.firstNoShowEligible ? (
+                      <>Cancelling after booking start releases Bay B-08 immediately. Because this is your first no-show, the fee is waived: <strong>₹120 returns directly to your wallet</strong>.</>
+                    ) : (
+                      <>Cancelling releases Bay B-08 immediately. Standard 25% fee applies: <strong>₹90 returns to your wallet</strong> (₹30 fee retained).</>
+                    )}
+                  </p>
+                </div>
+
+                <div className="flex gap-2.5 pt-2">
+                  <div className="flex-1">
+                    <Btn variant="secondary" className="h-14" onClick={() => dispatch({ type: 'CLOSE_MODAL' })}>
+                      Keep Booking
+                    </Btn>
+                  </div>
+                  <div className="flex-1">
+                    <Btn variant="destructiveSolid" onClick={() => dispatch({ type: 'TRIGGER_RELEASE', reason: 'user_cancel' })}>
+                      Confirm & Release
+                    </Btn>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* B5: S5 CONFLICT REPORT SHEET WITH VERTICAL 3-STEP PROGRESS */}
+            {activeModal === 'conflict_sheet' && (
+              <div className="space-y-4">
+                <div className="text-center">
+                  <h3 className="font-display text-lg font-bold text-brandNavy">Someone is in your spot?</h3>
+                  <p className="text-sm text-inkMuted mt-0.5">Outcome in under 90 seconds: verified spot or instant refund.</p>
+                </div>
+
+                {lookupStep > 0 ? (
+                  <div className="py-3 space-y-4">
+                    {/* Small Radar */}
+                    <div className="relative w-14 h-14 mx-auto rounded-full bg-slate-900 flex items-center justify-center border border-slate-700 overflow-hidden shadow-subtle">
+                      <div className="w-full h-full absolute inset-0 bg-gradient-to-tr from-transparent via-blue-500/40 to-transparent animate-radar"></div>
+                      <div className="w-2.5 h-2.5 rounded-full bg-blue-400"></div>
+                    </div>
+
+                    {/* Vertical 3-Step Sequence */}
+                    <div className="bg-slate-50 rounded-2xl border border-slate-200 p-4 space-y-3">
+                      {lookupMessages.map((msg, idx) => {
+                        const stepNum = idx + 1;
+                        const isDone = lookupStep > stepNum;
+                        const isCurrent = lookupStep === stepNum;
+                        return (
+                          <div key={msg} className="flex items-center gap-3 text-sm">
+                            {isDone ? (
+                              <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center p-1 shrink-0">
+                                <Icon.Check />
+                              </div>
+                            ) : isCurrent ? (
+                              <div className="w-6 h-6 rounded-full bg-blue-100 text-brandBlue flex items-center justify-center p-1 shrink-0">
+                                <Icon.Spinner />
+                              </div>
+                            ) : (
+                              <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-400 flex items-center justify-center text-xs font-bold shrink-0 tabular-nums">
+                                {stepNum}
+                              </div>
+                            )}
+                            <span className={`${
+                              isDone ? 'text-slate-700 font-semibold' :
+                              isCurrent ? 'text-brandNavy font-display font-bold' :
+                              'text-slate-400 font-medium'
+                            }`}>
+                              {msg}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-1.5 text-left">
+                      <label htmlFor="plate-digits-input" className="text-sm font-semibold text-slate-700 block">
+                        Vehicle plate (last 4 digits, optional):
+                      </label>
+                      <input
+                        id="plate-digits-input"
+                        type="text"
+                        inputMode="numeric"
+                        maxLength="4"
+                        value={localPlate}
+                        onChange={(e) => setLocalPlate(e.target.value)}
+                        placeholder="4021"
+                        className="w-full bg-slate-50 border border-borderSubtle rounded-2xl px-4 py-3 text-base font-display font-bold text-slate-900 tabular-nums focus:outline-none focus:ring-2 focus:ring-brandBlue"
+                      />
+                    </div>
+
+                    <div className="flex gap-2.5 pt-2">
+                      <div className="flex-1">
+                        <Btn variant="secondary" className="h-14" onClick={() => dispatch({ type: 'CLOSE_MODAL' })}>
+                          Cancel
+                        </Btn>
+                      </div>
+                      <div className="flex-[2]">
+                        <Btn
+                          variant="primary"
+                          onClick={() => dispatch({ type: 'STEP_LOOKUP', step: 1, plate: localPlate })}
+                          trailingIcon={<Icon.ArrowRight />}
+                        >
+                          Find me a verified spot
+                        </Btn>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* MODAL: CONFIRM SWITCH ZONE */}
+            {activeModal === 'switch_zone' && (
+              <div className="space-y-4 text-center">
+                <h3 className="font-display text-lg font-bold text-brandNavy">Transfer to Brigade Road?</h3>
+                <p className="text-[15px] leading-[22px] text-inkMuted px-2">
+                  Bay A-04 at Brigade Road Zone (400 m away) will be secured for your vehicle without any additional charge.
+                </p>
+                <div className="flex gap-2.5 pt-2">
+                  <div className="flex-1">
+                    <Btn variant="secondary" className="h-14" onClick={() => dispatch({ type: 'CLOSE_MODAL' })}>Back</Btn>
+                  </div>
+                  <div className="flex-1">
+                    <Btn variant="navy" onClick={() => dispatch({ type: 'TRANSFER_BRIGADE_ZONE' })}>Confirm Transfer</Btn>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* MODAL: CONFIRM REFUND */}
+            {activeModal === 'refund_flow' && (
+              <div className="space-y-4 text-center">
+                <h3 className="font-display text-lg font-bold text-brandNavy">Instant Resolution Refund</h3>
+                
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-sm text-left space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Booking pass refund:</span>
+                    <span className="font-bold text-slate-900 tabular-nums">₹120</span>
+                  </div>
+                  <div className="flex justify-between text-emerald-700 font-semibold">
+                    <span>Inconvenience apology credit:</span>
+                    <span className="font-bold tabular-nums">+₹50</span>
+                  </div>
+                  <div className="pt-2 border-t border-slate-200 flex justify-between font-display font-extrabold text-slate-900">
+                    <span>Total credited:</span>
+                    <span className="text-emerald-600 tabular-nums">₹170</span>
+                  </div>
+                </div>
+
+                <p className="text-sm text-slate-500">Available immediately in your SwiftPark wallet.</p>
+
+                <div className="flex gap-2.5 pt-1">
+                  <div className="flex-1">
+                    <Btn variant="secondary" className="h-14" onClick={() => dispatch({ type: 'CLOSE_MODAL' })}>Back</Btn>
+                  </div>
+                  <div className="flex-1">
+                    <Btn variant="success" onClick={() => dispatch({ type: 'PROCESS_FULL_REFUND' })}>Credit ₹170 Now</Btn>
+                  </div>
+                </div>
+              </div>
+            )}
+
+          </div>
+        </div>
+      );
+    }
+
+    // =========================================================================
+    // WARDEN APP VIEW ("SWIFTPARK ENFORCE" - B9 UPGRADES)
+    // =========================================================================
+    function WardenAppView({ state, dispatch }) {
+      const { wardenTab, wardenTasks, bays, toasts } = state;
+      const [nowTick, setNowTick] = useState(Date.now());
+      const wardenToast = toasts.warden;
+
+      useEffect(() => {
+        const timer = setInterval(() => setNowTick(Date.now()), 1000);
+        return () => clearInterval(timer);
+      }, []);
+
+      const formatRelativeTime = (timestamp) => {
+        const sec = Math.max(0, Math.floor((nowTick - timestamp) / 1000));
+        if (sec < 5) return 'Just now';
+        if (sec < 60) return `${sec}s ago`;
+        const min = Math.floor(sec / 60);
+        return `${min}m ago`;
+      };
+
+      const pendingTasks = wardenTasks.filter(t => t.status === 'pending');
+      const resolvedTasks = wardenTasks.filter(t => t.status === 'resolved');
+
+      const avgResponseFormatted = state.resolvedTasksCount > 0
+        ? `${Math.round(state.totalResponseTimeSec / state.resolvedTasksCount)}s`
+        : '0s';
+
+      const freeBays = bays.filter(b => b.status === 'available').length;
+      const occupiedBays = bays.filter(b => b.status === 'occupied' || b.status === 'occupied_by_squatter').length;
+      const ghostBays = bays.filter(b => b.status === 'ghost').length;
+
+      return (
+        <div className="flex-1 flex flex-col bg-wardenBg text-slate-100 overflow-hidden relative font-sans">
+          
+          {/* Warden Toast Banner */}
+          {wardenToast && (
+            <div key={wardenToast.id} className="absolute top-3 inset-x-4 z-50 animate-toast pointer-events-auto">
+              <div className="px-4 py-3 rounded-2xl shadow-floating border border-wardenAmber bg-amber-950/95 text-amber-100 flex items-center gap-2.5 text-xs font-semibold backdrop-blur-md">
+                <div className="w-4 h-4 text-wardenAmber shrink-0"><Icon.AlertTriangle /></div>
+                <span className="flex-1 leading-snug">{wardenToast.message}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Warden Header */}
+          <header className="px-5 py-3.5 bg-wardenSurface border-b border-slate-800 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-wardenAmber border border-amber-500/30 flex items-center justify-center p-1.5">
+                <Icon.Shield />
+              </div>
+              <div>
+                <h2 className="font-display text-xs font-extrabold tracking-[0.06em] uppercase text-wardenAmber">SwiftPark Enforce</h2>
+                <div className="text-xs text-slate-400 font-medium">MG Road Zone (20 Bays)</div>
+              </div>
+            </div>
+
+            <div className="bg-slate-800 text-slate-200 text-xs font-display font-bold px-3 py-1 rounded-full border border-slate-700 tabular-nums">
+              {pendingTasks.length} Pending
+            </div>
+          </header>
+
+          {/* Summary Tiles */}
+          {wardenTab === 'tasks' && (
+            <div className="grid grid-cols-3 gap-2 px-5 pt-3.5 pb-1 shrink-0">
+              <div className="bg-wardenSurface p-2.5 rounded-2xl border border-slate-800 text-center">
+                <span className="text-xs font-display font-bold text-slate-400 uppercase tracking-[0.06em] block">Open</span>
+                <span className="font-display text-lg font-extrabold text-wardenAmber tabular-nums">{pendingTasks.length}</span>
+              </div>
+              <div className="bg-wardenSurface p-2.5 rounded-2xl border border-slate-800 text-center">
+                <span className="text-xs font-display font-bold text-slate-400 uppercase tracking-[0.06em] block">Resolved</span>
+                <span className="font-display text-lg font-extrabold text-emerald-400 tabular-nums">{resolvedTasks.length}</span>
+              </div>
+              <div className="bg-wardenSurface p-2.5 rounded-2xl border border-slate-800 text-center">
+                <span className="text-xs font-display font-bold text-slate-400 uppercase tracking-[0.06em] block">Avg Resp</span>
+                <span className="font-display text-lg font-extrabold text-slate-200 tabular-nums">{avgResponseFormatted}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Main Operational Body */}
+          <main className="flex-1 overflow-y-auto custom-scroll p-5 space-y-4">
+            
+            {wardenTab === 'tasks' ? (
+              <div className="space-y-3.5 animate-screen">
+                <SectionHeader
+                  dark={true}
+                  icon={<Icon.Shield />}
+                  title={`Actionable Conflict Tasks (${wardenTasks.length})`}
+                />
+
+                {wardenTasks.length === 0 ? (
+                  <div className="bg-wardenSurface border border-slate-800 rounded-3xl p-8 text-center text-sm text-slate-400 space-y-2">
+                    <div className="w-10 h-10 rounded-full bg-slate-800 text-wardenAmber flex items-center justify-center mx-auto p-2">
+                      <Icon.Shield />
+                    </div>
+                    <div className="font-display font-bold text-slate-200 text-base">No open squatter disputes</div>
+                    <p>Unclaimed reservations auto-release. You will be alerted here when a bay conflict occurs.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {wardenTasks.map(task => (
+                      <div key={task.id} className="bg-wardenSurface border border-slate-800 rounded-3xl p-5 shadow-raised space-y-3 relative overflow-hidden">
+                        
+                        <div className={`absolute top-0 bottom-0 left-0 w-1.5 ${task.status === 'pending' ? 'bg-rose-500' : 'bg-emerald-500'}`}></div>
+
+                        <div className="flex justify-between items-start pl-2">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              {task.status === 'pending' && (
+                                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
+                              )}
+                              <h4 className="font-display text-base font-extrabold text-white">Bay {task.bay}</h4>
+                            </div>
+                            <p className="text-sm text-rose-300 font-semibold mt-0.5 tabular-nums">
+                              Unauthorized vehicle ...{task.plate}
+                            </p>
+                          </div>
+                          <span className="text-xs text-slate-300 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800 tabular-nums font-medium">
+                            {formatRelativeTime(task.timestamp)}
+                          </span>
+                        </div>
+
+                        {/* B9: outcomeDetail with small icon */}
+                        <div className="pl-2 flex items-center gap-2 text-sm text-slate-300 font-medium">
+                          <div className="w-4 h-4 text-blue-400 shrink-0"><Icon.Navigation /></div>
+                          <span>{task.outcomeDetail}</span>
+                        </div>
+
+                        {task.status === 'pending' ? (
+                          <div className="pt-2 pl-2 border-t border-slate-800 grid grid-cols-3 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => dispatch({
+                                type: 'WARDEN_ACTION',
+                                taskId: task.id,
+                                taskTimestamp: task.timestamp,
+                                label: 'Acknowledged'
+                              })}
+                              className="h-12 bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs font-display font-bold rounded-xl border border-slate-700 tap-scale flex items-center justify-center gap-1.5 px-2"
+                            >
+                              <div className="w-4 h-4 shrink-0"><Icon.Check /></div>
+                              <span>Ack</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => dispatch({
+                                type: 'WARDEN_ACTION',
+                                taskId: task.id,
+                                taskTimestamp: task.timestamp,
+                                label: 'Ticket Issued (₹500)'
+                              })}
+                              className="h-12 bg-rose-950/90 hover:bg-rose-900 text-rose-100 text-xs font-display font-bold rounded-xl border border-rose-800 tap-scale flex items-center justify-center gap-1.5 px-2"
+                            >
+                              <div className="w-4 h-4 shrink-0"><Icon.Ticket /></div>
+                              <span>Ticket</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => dispatch({
+                                type: 'WARDEN_ACTION',
+                                taskId: task.id,
+                                taskTimestamp: task.timestamp,
+                                label: 'Booking Verified'
+                              })}
+                              className="h-12 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-display font-semibold rounded-xl border border-slate-700 tap-scale flex items-center justify-center gap-1.5 px-2"
+                            >
+                              <div className="w-4 h-4 shrink-0"><Icon.Info /></div>
+                              <span>Valid</span>
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="pl-2 pt-1 text-sm text-emerald-400 font-bold flex items-center gap-2 tabular-nums">
+                            <div className="w-4 h-4 shrink-0"><Icon.Check /></div>
+                            <span>Resolved: {task.resolutionText}</span>
+                          </div>
+                        )}
+
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* B9: ZONE MATRIX TAB WITH >=64px TILES */
+              <div className="space-y-3.5 animate-screen">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <SectionHeader dark={true} icon={<Icon.Pin />} title="Real-Time Bay Matrix" />
+                  <div className="flex items-center gap-1.5 text-xs font-semibold tabular-nums">
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-700 text-emerald-300">{freeBays} Free</span>
+                    <span className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300">{occupiedBays} Taken</span>
+                    <span className="px-2 py-0.5 rounded-full bg-amber-950 border border-amber-700 text-amber-300">{ghostBays} Ghost</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-4 gap-2">
+                  {bays.map(bay => {
+                    let tileStyle = 'bg-slate-900 border-slate-800 text-slate-400';
+                    let statusText = 'Taken';
+                    let statusIcon = <div className="w-4 h-4"><Icon.CarTop /></div>;
+
+                    if (bay.status === 'available') {
+                      tileStyle = 'bg-emerald-950/70 border-emerald-600 text-emerald-300';
+                      statusText = 'Free';
+                      statusIcon = <span className="font-display font-extrabold text-xs">P</span>;
+                    } else if (bay.status === 'ghost') {
+                      tileStyle = 'bg-amber-950/70 border-amber-600 text-amber-300';
+                      statusText = 'Ghost';
+                      statusIcon = <div className="w-4 h-4"><Icon.Hourglass /></div>;
+                    } else if (bay.status === 'occupied_by_squatter') {
+                      tileStyle = 'bg-rose-950 border-rose-500 text-rose-200 font-bold';
+                      statusText = 'Squatter';
+                      statusIcon = <div className="w-4 h-4 text-rose-400"><Icon.AlertTriangle /></div>;
+                    } else if (bay.status === 'reserved_unclaimed' || bay.status === 'reserved_checked_in') {
+                      tileStyle = 'bg-blue-950 border-blue-500 text-blue-200';
+                      statusText = 'Booked';
+                      statusIcon = <div className="w-4 h-4"><Icon.Clock /></div>;
+                    }
+
+                    return (
+                      <div
+                        key={bay.id}
+                        className={`min-h-[68px] p-2.5 rounded-2xl border flex flex-col items-center justify-between gap-1 text-center ${tileStyle}`}
+                      >
+                        <div className="font-display text-xs font-bold tabular-nums">{bay.id}</div>
+                        <div className="my-0.5">{statusIcon}</div>
+                        <div className="text-xs font-medium tracking-tight truncate w-full">{statusText}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+          </main>
+
+          {/* Warden Bottom Bar */}
+          <nav
+            style={{ paddingBottom: 'env(safe-area-inset-bottom, 8px)' }}
+            className="shrink-0 bg-wardenSurface border-t border-slate-800 flex items-center justify-around px-3 pt-2 pb-2 z-30"
+          >
+            <button
+              type="button"
+              onClick={() => dispatch({ type: 'SET_WARDEN_TAB', tab: 'tasks' })}
+              className={`flex-1 min-h-[48px] flex flex-col items-center justify-center gap-1 font-bold text-xs focus:outline-none ${
+                wardenTab === 'tasks' ? 'text-wardenAmber' : 'text-slate-400'
+              }`}
+            >
+              <div className={`px-4 py-1 rounded-full relative ${wardenTab === 'tasks' ? 'bg-amber-500/15 text-wardenAmber' : ''}`}>
+                <div className="w-5 h-5"><Icon.Shield /></div>
+                {pendingTasks.length > 0 && (
+                  <span className="absolute top-0.5 right-2.5 w-2.5 h-2.5 rounded-full bg-rose-500 border-2 border-wardenSurface"></span>
+                )}
+              </div>
+              <span>Open Tasks</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => dispatch({ type: 'SET_WARDEN_TAB', tab: 'zone' })}
+              className={`flex-1 min-h-[48px] flex flex-col items-center justify-center gap-1 font-bold text-xs focus:outline-none ${
+                wardenTab === 'zone' ? 'text-wardenAmber' : 'text-slate-400'
+              }`}
+            >
+              <div className={`px-4 py-1 rounded-full ${wardenTab === 'zone' ? 'bg-amber-500/15 text-wardenAmber' : ''}`}>
+                <div className="w-5 h-5"><Icon.Pin /></div>
+              </div>
+              <span>Zone Matrix</span>
+            </button>
+          </nav>
+
+        </div>
+      );
+    }
+
+    // Mount Application
+    const rootEl = document.getElementById('root');
+    const root = ReactDOM.createRoot(rootEl);
+    root.render(<SwiftParkMain />);
+  </script>
+</body>
+</html>
